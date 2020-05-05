@@ -10,9 +10,13 @@ The name’s a bit of a mouthful, but “Convert-RibbonSbcConfigToWord.ps1” ta
 <p>It started life as a way to save the tedium of screen-scraping lots of fixed frames for my as-built documents, but it quickly became apparent that it would also make a useful tool for the offline review of a gateway&rsquo;s config (although it ain&rsquo;t  no &ldquo;UxBuilder&rdquo;).</p>
 <p>&nbsp;</p>
 <h2><span style="color: #ff0000;">Convert your backups from this:</span></h2>
-<p><img id="138853" src="/site/view/file/138853/1/TransformationTable-XML.PNG" alt="" width="734" height="402" /></p>
+
+<img src="https://user-images.githubusercontent.com/11004787/81054574-64b12f80-8f0a-11ea-8a57-60fef112945a.png" alt="" width="600" />
+
 <h2><span style="color: #ff0000;">&hellip; to this:</span></h2>
-<p><img id="138854" src="/site/view/file/138854/1/TransformationTable-Word-v2.PNG" alt="" width="1045" height="386" /></p>
+
+<img src="https://user-images.githubusercontent.com/11004787/81054622-7abef000-8f0a-11ea-9148-28a696bd805d.png" alt="" width="600" />
+
 <h3>Features</h3>
 <ul>
 <li>Decodes gateway versions up to 8.1.0 &amp; SWe Lite. </li>
@@ -45,7 +49,6 @@ If you don&rsquo;t specify an InputFile, the script goes looking for "symphonyco
 <p>You can easily batch it:</p>
 <pre>PS H:\&gt; Get-ChildItem "d:\path\*.xml" -recurse | .\Convert-RibbonSbcConfigToWord.ps1 -IncludeNodeInfo -MakePdf -SkipUpdateCheck</pre>
 <pre>PS H:\&gt; Get-ChildItem "d:\path\*.tar" -recurse | .\Convert-RibbonSbcConfigToWord.ps1 -MakePdf -SkipUpdateCheck</pre>
-<pre><br /></pre>
 &nbsp;
 <h3>Revision History</h3>
 <h4>(Read about older versions <a href="https://greiginsydney.com/uxbuilder" target="_blank"> on my blog</a>)</h4>
@@ -184,3 +187,11 @@ If you don&rsquo;t specify an InputFile, the script goes looking for "symphonyco
 <h3>Help me improve the script</h3>
 <p>PLEASE let me know if you encounter any problems. All I ask is a copy of the .tar or symphonyconfig.xml file (de-identified as you wish), and a screen-grab from the browser to show me what it's <em>meant</em> to look like on-screen.</p>
 <hr />
+
+<br>
+
+\- G.
+
+<br>
+
+This script was originally published at [https://greiginsydney.com/uxbuilder/](https://greiginsydney.com/uxbuilder/).
