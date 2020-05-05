@@ -1,11 +1,5 @@
 # Convert-RibbonSbcConfigToWord.ps1
-The name???s a bit of a mouthful, but ???Convert-RibbonSbcConfigToWord.ps1??? takes the backup file from your Sonus/Ribbon SBC 1000/2000/SWe Lite gateway and creates a new Word document, with all of the important(?) configuration information captured in tables.
 
-&nbsp;
-There's more information on the blog:
-<span style="font-size: medium;">https://greiginsydney.com/uxbuilder
-<hr />
-&nbsp;
 The name's a bit of a mouthful, but "Convert-RibbonSbcConfigToWord.ps1" takes the backup file from your Sonus/Ribbon SBC 1000/2000/SWeLite gateway and creates a new Word document, with all of the important(?) configuration information captured  in tables.&nbsp;
 It started life as a way to save the tedium of screen-scraping lots of fixed frames for my as-built documents, but it quickly became apparent that it would also make a useful tool for the offline review of a gateway's config (although it ain't  no "UxBuilder").
 
