@@ -45,6 +45,7 @@
 					Fixed bugs:
 						- Updated input "$Fullname" to remove array declaration (Tks Mike.)
 						- Some SBCs previously reported two blank lines between feature licences and the expiry, etc footer. Now back to just one.
+						- SIP SigGp: Supported Audio Mode of "Proxy with local SRTP" & Proxy Local SRTP Crypto Profile ID should not show on a 1k/2k. Corrected.
 					
 				v8.1.0B 18th March 2020
 					Fixed bug where TT's were no longer arranged alphabetically - broken with the new layout introduced in v8.0.0. (Tks Mike.)
@@ -5751,7 +5752,10 @@ begin
 												if ($SIPgroup.IE.RTPMode -eq '1') { $AudioFaxStreamMode += "DSP`n" }
 												if ($SIPgroup.IE.RTPProxyMode  -eq '1') { $AudioFaxStreamMode += "Proxy`n" }
 												if ($SIPgroup.IE.RTPDirectMode -eq '1') { $AudioFaxStreamMode += "Direct`n" }
-												if ($SIPgroup.IE.RTPProxySrtpMode -eq '1') { $AudioFaxStreamMode += "Proxy with Local SRTP`n" }
+												if ($SWeLite)
+												{
+													if ($SIPgroup.IE.RTPProxySrtpMode -eq '1') { $AudioFaxStreamMode += "Proxy with Local SRTP`n" }
+												}
 												$SIPSgR2 += Strip-TrailingCR -DelimitedString $AudioFaxStreamMode
 											}
 											else
@@ -5796,7 +5800,7 @@ begin
 												$SIPSgR1 += 'Media List ID'
 												$SIPSgR2 += $MediaListProfileLookup.Get_Item($SIPgroup.IE.MediaConfigID)
 											}
-											if ($SIPgroup.IE.RTPProxySrtpMode -eq '1')
+											if ($SWeLite -and $SIPgroup.IE.RTPProxySrtpMode -eq '1')
 											{
 												$SIPSgR1 += 'Proxy Local SRTP Crypto Profile ID'
 												$SIPSgR2 += $SDESMediaCryptoProfileLookup.Get_Item($SIPgroup.IE.CryptoProfileID)
@@ -9871,8 +9875,8 @@ end
 # SIG # Begin signature block
 # MIIceAYJKoZIhvcNAQcCoIIcaTCCHGUCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUBhl5UIkKa//Q+z5piDpo6nBe
-# f0KgghenMIIFMDCCBBigAwIBAgIQA1GDBusaADXxu0naTkLwYTANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUdW0+lqT8P7aRiJWM1CrxKYut
+# i3ygghenMIIFMDCCBBigAwIBAgIQA1GDBusaADXxu0naTkLwYTANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTIwMDQxNzAwMDAwMFoXDTIxMDcw
@@ -10003,22 +10007,22 @@ end
 # BgNVBAMTKERpZ2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBDb2RlIFNpZ25pbmcgQ0EC
 # EANRgwbrGgA18btJ2k5C8GEwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFBGt1B8mNDkUnGBMSxWI
-# vZJow99eMA0GCSqGSIb3DQEBAQUABIIBAGmSnPb4ij6oCmI206dxyYwDdrRp7ctx
-# qt9mu04C4lkcWgM1QEcRCiPrc/BaIYUpfG2/P+9tBTjQ+9JyBxRtvHlYkbfYZpSN
-# FYV8ILo5gmSxJ0mJImLl8kzoBuNd5gR3CCS3b4pAumHf45k5/eLbctGAwhOI5DIb
-# 8Bb6nKip7MZjd31pGBSI5BEM5M3cJLYDDQ3tG94Ap97CmXeeDQlgaIQKhBiRx7S/
-# IC65xsIyqP5YGyTB69ki+9hqLSBqiBiIGzBOq4r2qfJCkiTGaV610bFsplC50qKS
-# pxzrp5NV15TosIe2EU7e53Tz+bPVzHiKvbgTel7GhYxHcnoZCprKE6GhggIPMIIC
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFAJIKVNUcsWR1VY1I46Q
+# C/7NAfv6MA0GCSqGSIb3DQEBAQUABIIBAAb1urSe43tsd8QVx1e5j3pS5QBIDXbp
+# /Sb+QHFO6oakpwv6gtMuHSC8/SZjDukzq9Ah6wlcRF82KxfQhRcyf8qcMk0AClgz
+# WIIVol4pSHkpQEe6Xgdt+0ATcJulPuUhezA6fTib2N4FlU2LAicGZTIOnGWsyoiJ
+# wVnZrpit8Cx54Sa6UL604xNkcvBRmVUUqH+8OYtvtnUqQnvwrrxMEyekMIwOsBDk
+# ZCMGbzc0FGlpVte2it++29eX+zSGA5EcNwMoNFjOVzvngZlnOK9WegSYLmv2ChID
+# FDjRmS2+W08y/Fw/J4gCYEGy9sKrVflEKkAxtZlEls6coxAmM+T9n+uhggIPMIIC
 # CwYJKoZIhvcNAQkGMYIB/DCCAfgCAQEwdjBiMQswCQYDVQQGEwJVUzEVMBMGA1UE
 # ChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYD
 # VQQDExhEaWdpQ2VydCBBc3N1cmVkIElEIENBLTECEAMBmgI6/1ixa9bV6uYX8GYw
 # CQYFKw4DAhoFAKBdMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcN
-# AQkFMQ8XDTIwMDgxNjAyNTg0NFowIwYJKoZIhvcNAQkEMRYEFJ5hX8PybYLH/FkN
-# GdqFb9k9A9sJMA0GCSqGSIb3DQEBAQUABIIBAEuWS56hAxGzVtexxyxTXPmiJesD
-# K6WurELlYNufqt6v27u4he3dOSkJ6DqS4M+AbxdpgTZ7a32ZdEqkwc9FbfvnJuHG
-# 6Zda9TMHDKp8/FG/fe8uMhbdYzWRwd4EriDrajxcvQ+2QzLV+TweFsMjXUikHznm
-# +c6JDuOQ48/0aZ5UaamdfPniAKuYFMPAUHJpAYPUptns1PU3cu/9ULKsJMK7Kc+X
-# v7+LoymrKcMR5DGnWtjqlc1wsUszOJVPa0QRJ3buaruElfCo48viXBFLhGxI/JsD
-# ONTZpmhnsFjoNWQ7Ijg+H/w9AwH6XjXM08G+I9PeAWteRhKxVgiTrkNqX3I=
+# AQkFMQ8XDTIwMDgxNjAzMjU1M1owIwYJKoZIhvcNAQkEMRYEFI+/jw/LQN3wFgZ9
+# uNXRUi1GxMLDMA0GCSqGSIb3DQEBAQUABIIBAA2QVzuee3wJ6HhsuVJUqepiZmfM
+# 2vwLuOgmZ2JkU9M3Ga3fqkmIIlDnudskf+xa7zSvMwP/yea9ebgcbfJOmJoGYMFO
+# r58MAEgP5AtPyO/tyFAJ959XyrKuOO7Z6RKUbvSSw/IEMZ96FCSvbCoehPolXquB
+# uJRbiDsI/UL2SPkD7TV5o+0RMJOQSgpbtHPBWU40cXDB3Ouft4VLtuLikzD59dHn
+# tLBBlSkGANLhw3shkQq1hsGZP5TTXJUG/knKMs6lFw1tyvfu5Ecj/qFvMNmTL26j
+# nsBTtxVYwlUgzDMlkFAALzrN+EuJ6XjfWG2tL0QGFmYyo3QPimfcAs/lsxc=
 # SIG # End signature block
