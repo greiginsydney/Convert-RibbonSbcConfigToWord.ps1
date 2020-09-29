@@ -75,6 +75,22 @@ PS H:\> Get-ChildItem "d:\path\*.tar" -recurse | .\Convert-RibbonSbcConfigToWord
 
 ### (Read about older versions <a href="https://greiginsydney.com/uxbuilder" target="_blank"> on my blog</a>)
 
+#### v8.1.5 16th August 2020
+- Added display of SILK licences to the SweLite's System / Licensing / Current Licenses
+- Now reports 'License Expiration' value from nodeinfo.txt for 1k/2k. (Was previously suppressed. I don't know why).
+- Updated label on SweLite's License 'Virtual DSP Sessions' to 'Enhanced Media Sessions with Transcoding'
+- Updated label on SweLite's License 'Proxy RTP <-> SRTP Sessions' to 'Enhanced Media Sessions without Transcoding'
+- Removed test to suppress System / Node Level Settings / Country Level Information if SweLite: it's visible there now
+- SweLite: Removed the 'License Expiration' line from the bottom of the licences table
+- Changed license display: if not licenced, replace any '0' value with 'Not Licensed'
+- Added new bits in 8.1.0 (SweLite) / 8.1.5 (1k/2k):
+    - "Teams Local Media optimization" in SIP Sig Gps
+    - Primary & Secondary Source to System / Node Level Settings / Domain Name Service
+- Fixed bugs:
+    - Updated input "$Fullname" to remove array declaration (Tks Mike.)
+    - Some SBCs previously reported two blank lines between feature licences and the expiry, etc footer. Now back to just one.
+    - SIP SigGp: Supported Audio Mode of "Proxy with local SRTP" & Proxy Local SRTP Crypto Profile ID should not show on a 1k/2k. Corrected.
+					
 #### v8.1.0B 18th March 2020
 
 - Fixed bug where TT's were no longer arranged alphabetically - broken with the new layout introduced in v8.0.0. (Tks Mike.) 
