@@ -15,7 +15,7 @@ It started life as a way to save the tedium of screen-scraping lots of fixed fra
 
 ## Features
 
-- Decodes gateway versions up to 8.1.0 & SWe Lite. 
+- Decodes SweLite, 1k & 2k gateway versions up to 9.0.1. 
 
 - Converts and saves the config to a new Word document, and optionally makes a PDF of it too. 
 
@@ -31,7 +31,7 @@ It started life as a way to save the tedium of screen-scraping lots of fixed fra
 
 - A "-SkipWrite" switch skips the relatively slow process of writing to Word. I added this for debugging and have left it in the released version to help anyone refining or enhancing the script. 
 
-- From v2 the script has been signed, so no longer requires you to drop your ExecutionPolicy to "Unrestricted". This also means you can be confident the code's not changed since it left here. 
+- Digicert kindly provide me with a code-signing certificate, so you don't need to drop your ExecutionPolicy to "Unrestricted". This also means you can be confident the code's not changed since it left here. 
 
 - Uses your existing Word document template for the formatting of the table headings and table of contents. 
 
@@ -39,7 +39,7 @@ It started life as a way to save the tedium of screen-scraping lots of fixed fra
 
 - It's not the fastest to run! Stuffing values into Word is a relatively slow process. With all options enabled allow up to 10 minutes for your average gateway. I've stolen Scott Hanselman's "<a href="http://www.hanselman.com/blog/ProgressBarsInPowerShell.aspx" target="_blank">Progress  Bars in PowerShell</a>" to help the watched pot boil. 
 
-- v8.0 captures even more of the gateway's config than before, however it still doesn't capture EVERYTHING. There's an enormous amount in there, and it's growing with each release! If you find I've not captured a particularly  valuable element of the config, feel free to revise it to suit your needs - and send me the new bits to incorporate, please. If you're not feeling up to it, send me a sample config file and some screen-grabs of the bit you'd like to see added. 
+- If you find I've not captured a particularly  valuable element of the config, feel free to revise it to suit your needs - and send me the new bits to incorporate, please. If you're not feeling up to it, send me a sample config file and some screen-grabs of the bit you'd like to see added. 
 
 - There are MANY hash tables throughout. (This is where an integer is stored in the config file, but it's decoded to text on-screen). I've put a lot of effort into capturing these, but there are going to be examples where I've missed one.  Please send me screen-grabs and sample config files and I'll update the script. 
 
@@ -74,6 +74,21 @@ PS H:\> Get-ChildItem "d:\path\*.tar" -recurse | .\Convert-RibbonSbcConfigToWord
 ## Revision History
 
 ### (Read about older versions <a href="https://greiginsydney.com/uxbuilder" target="_blank"> on my blog</a>)
+
+#### v9.0.1 - 7th November 2020
+- Consolidated creation of $SgTableLookup to new combined section in the 'first run' loop, as SigGps now recursively reference themselves for Call Recording
+- Removed redundant Sig Gp type (e.g. '(SIP)') from the start of each SigGp heading
+- Updated Security / TLS Profiles to now show only one instance of Certificate, now under 'Common Attributes'
+- Added new bits in 9.0.0 (SweLite) / 9.0.0 (1k/2k):
+	- 'SIP Recorder' (type) in SIP Server Tables
+	- 'SIP Recording' section in SIP
+	- 'SIP Recording' in SIP Sig Gps
+	- 'E911 Notification Manager' in Emergency Services
+	- Removed Forking from the licences table (as from v9 it's now licenced by default - but still displaying in the 1k/2k version of the table)
+- Fixed bugs / new bits missed previously:
+	- Added 'Drain' to $EnabledLookup & replaced 'Enabled' value with 'customAdminState' in Sig Gps where the latter is present
+	- SIP SigGp was reporting the default $SipGp.IE.Description instead of $SIPgroupDescription. (Only apparent if $SipGp.IE.Description was blank)
+	- Fixed bug where Security / TLS Profiles was showing a blank instead of the SBC certificate name
 
 #### v8.1.5 16th August 2020
 - Added display of SILK licences to the SweLite's System / Licensing / Current Licenses
@@ -133,126 +148,6 @@ PS H:\> Get-ChildItem "d:\path\*.tar" -recurse | .\Convert-RibbonSbcConfigToWord
 
 - No new functionality, no bugs unearthed. 
 
-#### v8.0.1 - 30th January 2019
-
-- Added new bits in 8.0.1: 
-
-    - Changed ISDN Sig Gp for new 'Until Timer Expiry' option in 'Play Inband Message Post-Disconnect' 
-
-    - Added new 'Convert DISC PI=1,8 to Progress' to ISDN Sig Gp 
-
-- Fixed bugs: 
-
-    - If the SBC has only 1 Transformation Table it would not display. (Bug in the alpha sort introduced in v7.0.0B) 
-
-    - Corrected several bugs in display of 'DTLS-SRTP Profiles' 
-
-    - Corrected bug in Media Lists where the 'DTLS-SRTP Profile' value wasn't correctly reported 
-
-    - Certs was truncating parameters if one happened to be a URL (as I was splitting on '/') 
-
-    - Certs wasn't populating the issuer's details (the RHS of the table) 
-
-- Created new $SipProfileCntctHdrLookup & edited values in $SipProfileFrmHdrLookup for new on-screen text 
-
-- Added "[No CN]" text if a cert (so far GoDaddy roots) has no CN 
-
-#### v8.0.0B - 16th November 2018
-
-- Updated label and display of SIP Sig Gp / Media Info / Supported Audio(/Fax) Modes to match current display syntax: Lite and 1k2k 
-
-- Fixed bug: 
-
-    - The logic for displaying SIP Sig Gp ICE Mode was faulty. (Mitsu-San yet again on the ball!) 
-
-#### v8.0.0 - 26th September 2018
-
-- Updated name to "Convert-RibbonSbcConfigToWord.ps1" 
-
-- Added new bits in 8.0.0 (b502): 
-
-    - NEW COLOUR SCHEME! (And added "-SonusGreen" switch for the die-hards) 
-
-    - TOD Routing 
-
-    - Load Balancing options 4 & 5 to $SipLoadBalancingLookup 
-
-    - 'SIP Failover Cause Codes' in SIP Sig Gps 
-
-    - 'RTCP Multiplexing' in SIP Sig Gps 
-
-    - 'ICE Mode' in SIP Sig Gps 
-
-    - Renamed 'Media Crypto Profiles' to 'SDES-SRTP Profiles' 
-
-    - 'DTLS-SRTP Profiles' 
-
-    - 'Redundancy Retry Timer' in SIP Profiles 
-
-    - Grouped Transformations, TOD, Call Routing & Call Actions in new 'Call Routing' group to align with the new on-screen layout 
-
-- Added new test in Test-ForNull to drop a marker in the doc if an expected lookup returned $null 
-
-- Set Word to disable spelling and grammar checking in the document. (Thanks Mike!) 
-
-- Hid the display of "Translations" (long obsolete) 
-
-- Fixed bugs: 
-
-    - Renamed variables in the SGPeers' .split() code to make them unique. (Had accidentally reused old having copy/pasted) 
-
-    - Corrected display of 'SDES-SRTP Profiles' Derivation Rate to add the '2^' prefix for non-zero values 
-
-    - If you ran with "-do calls" it would incorrectly not show the "incomplete" warning after the TOC. ("calls" sounds like "all") 
-
-#### v7.0.3 - 31st July 2018
-
-- Added new bits in 7.0.2 (b485) and SWe Lite 7.0.3 (b141): 
-
-    - New SIP Sig Gp Interop Mode 'Header Transparency' 
-
-    - Changed SIP Profile's 'FQDN in Contact Header' from $EnableLookup to $SipProfileFrmHdrLookup for Teams Direct Routing 
-
-- Changed Media Profiles and Media Crypto Profiles to V-tables 
-
-- Improved error reporting if the PDF exists and is open (i.e. locked) when the script goes to create it 
-
-- Major update to the SIP Message Manipulation rules: 
-
-    - Changed handling of SIP ElementDescriptors to break out the Token, Prefix and Suffix to a separate line for each 
-
-    - Added the "pre-400" messages to $SIPDescriptionLookup 
-
-    - Changed SMM rules to use $SIPDescriptionLookup when Applicable Messages = Selected Messages & a SIP code is matched 
-
-    - SMM Header & Request Line rules were not displaying URI & URIUser parameters 
-
-    - Changed SMM rules to display the header name in Title Case 
-
-    - Added some missing descriptors to $SipElementDescElementClassLookup & $SipElementDescActionLookup to improve SMM 
-
-    - Corrected display of "Ordinal" value in Header rules. Now only shows when the header name is Contact, Route, Record-Route or History-Info or PAI 
-
-    - Suppressed incorrect display of "Value" when Action = Remove 
-
-- Fixed bugs: 
-
-    - Corrected SWeLite's Media Crypto Profiles, suppressing display of Master Key Lifetime, Lifetime Value and Derivation Rate values 
-
-    - Func Dump-ErrToScreen was not correctly dumping the error to screen when in "non-debug" mode 
-
-    - Added some missing SIP messages to the $SIPDescriptionLookup. (Thank you again Mitsu-San) 
-
-    - Updated Strip-TrailingCR to keep removing the last char from the string until the last char ISN'T a CR. (Was only stripping once). 
-
-
-#### v7.0.1 - 14th April 2018
-
-- Added new bit in 7.0.1 (b483): 
-
-    - "Encrypt AD Cache" in Auth and Directory Services / AD / Configuration 
-
-- Re-jigged AD / Configuration to current layout. Removed some old variables. Changed label on "AD Backup" to "AD Backup Failure Alarm" 
 
 ### Help me improve the script
 
