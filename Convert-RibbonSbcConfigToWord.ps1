@@ -14,9 +14,9 @@
 	It will run with no command-line parameters and assumes default values for the source and destination files.
 
 .NOTES
-	Version				: 8.1.5
-	Date				: 16th August 2020
-	Gateway versions	: 2.1.1 - 8.1.5
+	Version				: 9.0.1
+	Date				: 7th November 2020
+	Gateway versions	: 2.1.1 - 9.0.1
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
 
@@ -31,6 +31,21 @@
 
 
 	Revision History 	:
+				v9.0.1 7th November 2020
+					Consolidated creation of $SgTableLookup to new combined section in the 'first run' loop, as SigGps now recursively reference themselves for Call Recording
+					Removed redundant Sig Gp type (e.g. '(SIP)') from the start of each SigGp heading
+					Updated Security / TLS Profiles to now show only one instance of Certificate, now under 'Common Attributes'
+					Added new bits in 9.0.0 (SweLite) / 9.0.0 (1k/2k):
+						- 'SIP Recorder' (type) in SIP Server Tables
+						- 'SIP Recording' section in SIP
+						- 'SIP Recording' in SIP Sig Gps
+						- 'E911 Notification Manager' in Emergency Services
+						- Removed Forking from the licences table (as from v9 it's now licenced by default - but still displaying in the 1k/2k version of the table)
+					Fixed bugs / new bits missed previously:
+						- Added 'Drain' to $EnabledLookup & replaced 'Enabled' value with 'customAdminState' in Sig Gps where the latter is present
+						- SIP SigGp was reporting the default $SipGp.IE.Description instead of $SIPgroupDescription. (Only apparent if $SipGp.IE.Description was blank)
+						- Fixed bug where Security / TLS Profiles was showing a blank instead of the SBC certificate name
+
 				v8.1.5 16th August 2020
 					Added display of SILK licences to the SweLite's System / Licensing / Current Licenses
 					Now reports 'License Expiration' value from nodeinfo.txt for 1k/2k. (Was previously suppressed. I don't know why).
@@ -46,7 +61,7 @@
 						- Updated input "$Fullname" to remove array declaration (Tks Mike.)
 						- Some SBCs previously reported two blank lines between feature licences and the expiry, etc footer. Now back to just one.
 						- SIP SigGp: Supported Audio Mode of "Proxy with local SRTP" & Proxy Local SRTP Crypto Profile ID should not show on a 1k/2k. Corrected.
-					
+
 				v8.1.0B 18th March 2020
 					Fixed bug where TT's were no longer arranged alphabetically - broken with the new layout introduced in v8.0.0. (Tks Mike.)
 
@@ -130,91 +145,6 @@
 						- Renamed variables in the SGPeers' .split() code to make them unique. (Had accidentally reused old having copy/pasted)
 						- Corrected display of 'SDES-SRTP Profiles' Derivation Rate to add the '2^' prefix for non-zero values
 						- If you ran with "-do calls" it would incorrectly not show the "incomplete" warning after the TOC. ("calls" sounds like "all")
-
-				v7.0.3 - 31st July 2018
-					Added new bits in 7.0.2 (b485) and SWe Lite 7.0.3 (b141):
-						- New SIP Sig Gp Interop Mode 'Header Transparency'
-						- Changed SIP Profile's 'FQDN in Contact Header' from $EnableLookup to $SipProfileFrmHdrLookup for Teams Direct Routing
-					Changed Media Profiles and Media Crypto Profiles to V-tables
-					Improved error reporting if the PDF exists and is open (i.e. locked) when the script goes to create it
-					Major update to the SIP Message Manipulation rules:
-						- Changed handling of SIP ElementDescriptors to break out the Token, Prefix and Suffix to a separate line for each
-						- Added the "pre-400" messages to $SIPDescriptionLookup
-						- Changed SMM rules to use $SIPDescriptionLookup when Applicable Messages = Selected Messages & a SIP code is matched
-						- SMM Header & Request Line rules were not displaying URI & URIUser parameters
-						- Changed SMM rules to display the header name in Title Case
-						- Added some missing descriptors to $SipElementDescElementClassLookup & $SipElementDescActionLookup to improve SMM
-						- Corrected display of "Ordinal" value in Header rules. Now only shows when the header name is Contact, Route, Record-Route or History-Info or PAI
-						- Suppressed incorrect display of "Value" when Action = Remove
-					Fixed bugs:
-						- Corrected SWeLite's Media Crypto Profiles, suppressing display of Master Key Lifetime, Lifetime Value and Derivation Rate values
-						- Func Dump-ErrToScreen was not correctly dumping the error to screen when in "non-debug" mode
-						- Added some missing SIP messages to the $SIPDescriptionLookup. (Thank you again Mitsu-San)
-						- Updated Strip-TrailingCR to keep removing the last char from the string until the last char ISN'T a CR. (Was only stripping once).
-
-				v7.0.2 - Skipped
-
-				v7.0.1 - 14th April
-					Added new bit in 7.0.1 (b483):
-						- "Encrypt AD Cache" in Auth and Directory Services / AD / Configuration
-					Re-jigged AD / Configuration to current layout. Removed some old variables. Changed label on "AD Backup" to "AD Backup Failure Alarm"
-
-				v7.0.0C - 2nd March 2018
-					Added new bits in 6.1.5 (b486):
-						- Added 'DTMF Minimum Level' to Media / Media Lists
-						- Added 'Early Media for PI: 2(Dest not ISDN)' to ISDN Sig Gps
-						- Changed label of 'Add Progress Indicator to Setup' in ISDN Sig Gps to 'Add PI to Setup' [Reminds me of Magnum PI]
-					Fixed bugs:
-						- Corrected a crash caused by nodeinfo.txt reporting 0 DS1 port licences instead of the expected "Unlicensed" in a v7 CCE (Thanks Mitsu-San!)
-						- Added 'not available' where the NodeLicenseSKU & SoftwareBundled info isn't present or can't be read from NodeInfo.txt
-
-				v7.0.0B - 13th February 2018
-					Rearranged Transformation Tables so they display in alphabetical order (as they do in the Web UI). Thanks Rick Eveleigh for the suggestion!
-					Updated WriteSection to display 'table is empty' for those elements that exist but have no content. (Previously suppressed)
-					Implemented myriad improvements recommended by ISESteroids PSSharper, including THIRTEEN THOUSAND " changed to '
-					Added new 'constrain' entries to Write-Section to reduce line-wrapping in Media Profiles & CAS Supp Service Profiles
-					Fixed bugs:
-						- BRI ports were incorrectly being shown in the 'Feature Licenses' table and not 'Port Licenses'. (Broken since last 'fixed' in 6.1)
-							(It seems nodeinfo.txt calls BRI's 'BRI Channels' if they're *not* licenced, and 'BRI Ports' if they are, hence my confusion.)
-						- SBA section would sometimes incorrectly report "need nodeinfo" for $ASM_WindowsEthernetSecMac even when nodeinfo was provided
-						- Fixed broken error message in 'Extract-FromArchive' that failed to show the archive's name if an Unzip failed
-						- Removed display of "Software Bundled" and related values from the License table if there's no ASM
-						- With old firmware < v4, AD / DCs would incorrectly report Server Timeout as "<n/a this rls> secs [5...15]"
-
-				v7.0.0A - 24th December 2017
-					Fixed bugs:
-						- Forced TLS1.2 in the 'Get-UpdateInfo' code, as my new website's increased security was causing the auto-update code to fail
-						- Removed 'Cmdlet Binding' settings from 'Get-UpdateInfo' for PSv2/Win7 support
-
-				v7.0.0 - 23rd December 2017
-					Added new bits in 7.0:
-						- 'Ethernet Port Redundancy' to Node Interfaces / Ports
-						- 'Emergency Services Configuration'
-						- 'Password Display' in Security / Users / Global Security Options
-						- 'Proxy Enabled' in Application Solution Module / ASM Configuration
-					Added new bits in SWeLite 7.0:
-						- Added new 'Proxy with local SRTP' to SIP Sig Gp Media Information
-						- Changed the label of the above from 'Audio Stream Mode' to 'Supported Audio Modes'
-						- Enabled display of 'Video/Application Stream mode' in Routing Table entries / Media section
-						- Reinstated display of 'Node-Level SIP Settings'
-						- Added new licence types 'Video Sessions', 'High Session Capacity Enabled', 'Proxy Local SRTP'
-						- Renamed 'SIP Media Sessions' to 'Virtual DSP Sessions' in the Current Licenses / Feature Licenses table
-						- Changed Media System Configuration guidance text for 'Number of Port Pairs' from '1..800' to '1..5000' & deleted 'per interface'
-						- Added IPv6, & reinstated display of 'IP Addressing Mode' in Networking Interfaces / Logical Interfaces
-						- Added Interface Name & Precedence to the ACL summary table (IPv4 & v6)
-						- Reinstated display of 'Host IP Version' in SIP Server Tables & 'Proxy IP Version' in SIP Sig Gps
-					Added other new bits:
-						- My modified version of Pat's Get-UpdateInfo (https://www.ucunleashed.com/3168). (Thanks Pat!)
-						- Added a $BroadSoftFlag to the Licence table section to display 'Not Licensed' if BroadSoft isn't referenced in nodeinfo.txt (SweLite)
-						- Added capture of 'SWe Lite ID' from nodeinfo.txt & added to System / Node-Level Settings to show instead of 'Node ID'
-						- Added display of ASM (under Node Interfaces / Ports) - but it only shows if NodeInfo is available, as there's no way to tell from symphonyconfig if it exists otherwise
-					Fixed bugs:
-						- The ASM's 'Windows Factory Licence' was being reported incorrectly in System / Licensing / Current Licenses
-						- 'MSTP State' was being reported incorrectly in Node Interfaces / Ports
-						- Fixed typo 'Maxium' in IPv4 Access Control Lists
-						- Suppressed display of 'No Channel Available Override' in SIP Sig Gps in the Swe Lite
-						- Suppressed display of 'Skype/Lync Edge Server' values in Node-Level SIP Settings in the Swe Lite
-						- Amended the SWeLite's Tone Tables to only display Ringback and Congestion tones
 
 
 				Intermediate release details have been removed from the released script
@@ -383,7 +313,7 @@ param(
 begin
 {
 
-	$ScriptVersion = '8.1.5'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
+	$ScriptVersion = '9.0.1'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
 	$Error.Clear()		  #Clear PowerShell's error variable
 	$Global:Debug = $psboundparameters.debug.ispresent
 
@@ -391,7 +321,7 @@ begin
 	# Setup hash tables--------------
 	#--------------------------------
 
-	$EnabledLookup= @{'0' = 'Disabled'; '1' = 'Enabled'} #Used everywhere
+	$EnabledLookup= @{'0' = 'Disabled'; '1' = 'Enabled'; '2' = 'Drain'} #Used everywhere (Drain only used in Sig Gps)
 	$ReverseEnabledLookup= @{'0' = 'Enabled'; '1' = 'Disabled'} #Seriously - Media list profiles, this is backwards!
 	$EnableLookup= @{'0' = 'Disable'; '1' = 'Enable'}	#Used in multiple places. (Pedantic?)
 	$TrueFalseLookup= @{'0' = 'False'; '1' = 'True'}	 #Used everywhere
@@ -582,6 +512,9 @@ begin
 
 	$TCAMonitoredStatisticLookup = @{'0' = '<Unhandled Value>'; '1' = 'TDM Signaling Group Channel Usage'; '2' = 'SIP Call License Usage'; '3' = 'SIP Registrations' ; '4' = 'DSP Usage'; '5' = 'CPU Usage'; '6' = 'Memory Usage'; '7' = 'File Descriptor Usage'; '8' = '1 Minute Load Average'; '9' = '5 Minute Load Average'; '10' = '15 Minute Load Average'; '11' = 'Temporary Partition Usage'; '12' = 'Logging Partition Usage'; '13' = '<Unhandled Value>'; '14' = '<Unhandled Value>'; '15' = '<Unhandled Value>'; '16' = '<Unhandled Value>'; '17' = '<Unhandled Value>'}
 	$TCAMonitoredStatisticValueLookup = @{'0' = ''; '1' = ''; '2' = ''; '3' = '' ; '4' = '%'; '5' = '%'; '6' = '%'; '7' = ''; '8' = ''; '9' = ''; '10' = ''; '11' = '%'; '12' = ''; '13' = ''; '14' = ''; '15' = ''; '16' = ''; '17' = ''}
+
+	$NotificationProviderLookup = @{'0' = 'Kandy'; '1' = '<Unhandled Value>'}
+	$NotificationEventsLookup = @{'0' = 'E911'; '1' = '<Unhandled Value>'}
 
 	$CountryCodeLookup = @{'0' = 'None'; '93' = 'Afghanistan'; '355' = 'Albania'; '213' = 'Algeria'; '376' = 'Andorra'; '244' = 'Angola'; '672' = 'Antarctica'; '54' = 'Argentina'; '374' = 'Armenia'; '297' = 'Aruba'; '61' = 'Australia'; '43' = 'Austria'; '994' = 'Azerbaijan'; '973' = 'Bahrain'; '880' = 'Bangladesh'; '375' = 'Belarus'; '32' = 'Belgium'; '501' = 'Belize'; '229' = 'Benin';`
 		'975' = 'Bhutan'; '591' = 'Bolivia'; '387' = 'Bosnia and Herzegovina'; '267' = 'Botswana'; '55' = 'Brazil'; '246' = 'British Indian Ocean Territory'; '673' = 'Brunei'; '359' = 'Bulgaria'; '226' = 'Burkina Faso'; '257' = 'Burundi'; '855' = 'Cambodia'; '237' = 'Cameroon'; '1c' = 'Canada'; '238' = 'Cape Verde'; '236' = 'Central African Republic'; '235' = 'Chad'; '56' = 'Chile'; '86' = 'China';`
@@ -1773,10 +1706,12 @@ begin
 				write-verbose -message 'System Release  = <Not Available>'
 				$release = '<Not Available - too old>'
 				$releaseBuild = 0
+				$releaseVersion = 0
 			}
 			else
 			{
-				$releaseBuild = [int](($release).Split('v'))[1] # Turns '6.1.0 v457' into just 457
+				$releaseVersion = [int](($release).Split('.v'))[0] # Turns '6.1.0 v457' into just 6
+				$releaseBuild   = [int](($release).Split('v'))[1] # Turns '6.1.0 v457' into just 457
 				write-verbose -message ('System Release  = {0}' -f ($release))
 			}
 			Write-AtBookmark -bookmark 'SysRelease' -data $release
@@ -2073,6 +2008,7 @@ begin
 										}
 									}
 								}
+								'SREC' 			{ $LicenceLine[0] = 'SIP Recording' }
 								'RIPR' 			{ $LicenceLine[0] = 'RIP' }
 								'Rest' 			{ $LicenceLine[0] = 'REST' }
 								'QoEReporting' 	{ $LicenceLine[0] = 'QoE' }
@@ -2120,7 +2056,13 @@ begin
 							if ($SweLite)
 							{
 								if (('SBA', 'Active Directory', 'Transcoding', 'REST', 'CAS', 'CDR', 'OSPF', 'RIP', 'IPsec', 'RBA', 'QoE', 'Video Passthrough', 'Additional WS2008R2 ASM License', 'Additional WS2012R2 ASM License', 'SIP VQ Reporting') -match $LicenceLine[0]) { continue }
+								if ($releaseVersion -ge 9)
+								{
+									#Forking is now free - no longer licenced, and no longer in the licence table (SweLite Only)
+									if (('Forking') -match $LicenceLine[0]) { continue }
+								}
 							}
+							
 							#Now bung the values into one of two separate licence tables:
 							switch ($LicenceLine[0])
 							{
@@ -2364,8 +2306,9 @@ begin
 									ForEach ($SbcCertificate in $SbcCertificates)
 									{
 										if ($SbcCertificate.IE.classname -eq $null) { continue } # Empty / deleted entry
-										if (($SbcCertificate.IE.classname -eq 'CERTIFICATE_FILE_DATA_CFG_IE') -and ($SbcCertificate.IE.CertFileType -eq '4'))
+										if (($SbcCertificate.IE.classname -eq 'CERTIFICATE_FILE_DATA_CFG_IE') -and (($SbcCertificate.IE.CertFileType -eq '1') -or ($SbcCertificate.IE.CertFileType -eq '4')))
 										{
+											#CertFileType: 1 = user-provided SBC cert, 4 = Ribbon default cert
 											$CertCommonName = "Unknown"
 											switch ($SbcCertificate.IE.CertCommonName)
 											{
@@ -2421,6 +2364,27 @@ begin
 									{
 										$LogServerLookup.Add($RemoteLogServer.value, $RemoteLogServer.IE.ServerAddress) # Referenced by Logging Configuration - Subsystems
 									}
+								}
+							}
+						}
+					}
+
+					#---------- SIGNALING GROUPS ------------
+					'SignalingGroups'
+					{
+						$SignalingGroups = $node.GetElementsByTagName('ID')
+						ForEach ($SignalingGroup in $SignalingGroups)
+						{
+							if ($SignalingGroup.IE.classname -eq $null) { continue } # Empty / deleted entry
+							if (($SignalingGroup.IE.classname -eq 'ISDN_SG_PROFILE_CONFIG_ENTRY_IE') -or ($SignalingGroup.IE.classname -eq 'SIP_CFG_SG_COMMON_IE') -or ($SignalingGroup.IE.classname -eq 'CAS_SG_CFG_IE'))
+							{
+								if ([int]$SignalingGroup.value -lt 50000)
+								{
+									$SgTableLookup.Add($SignalingGroup.value, ('{0}' -f (Fix-NullDescription -TableDescription $SignalingGroup.IE.Description -TableValue $SignalingGroup.value -TablePrefix 'Signaling Group Table #')))
+								}
+								else
+								{
+									$SgTableLookup.Add($SignalingGroup.value, ('{0}' -f (Fix-NullDescription -TableDescription $SignalingGroup.IE.Description -TableValue $SignalingGroup.value -TablePrefix 'SIPREC SG #'))) # Referenced by Signaling Groups (from v9.0.0+)
 								}
 							}
 						}
@@ -4958,6 +4922,7 @@ begin
 											$TlsProfileTable += ,('Allow Weak Cipher', $EnabledLookup.Get_Item($TlsProfile.IE.AllowWeakCiphers), '' , '')
 										}
 										$TlsProfileTable += ,('Handshake Inactivity timeout', ($TlsProfile.IE.HandshakeTimeout + ' secs [1..30]'), '' , '')
+										$TlsProfileTable += ,('Certificate', (Test-ForNull -LookupTable $CertificateLookup -value $TlsProfile.IE.ClientCertificate), '' , '')
 										$TlsProfileTable += ,('SPAN-L', 'Client Attributes', '' , '')
 										if ($TlsProfile.IE.ClientCipherSequence -ne $null)
 										{
@@ -4991,14 +4956,12 @@ begin
 										{
 											$TlsProfileTable += ,('Validate Server FQDN',  $TlsProfileValidateServerFQDN, '' , '')
 										}
-										$TlsProfileTable += ,('Certificate', (Test-ForNull -LookupTable $CertificateLookup -value $TlsProfile.IE.ServerCertificate), '' , '')
 										$TlsProfileTable += ,('SPAN-L', 'Server Attribute', '' , '')
 										#$TlsProfileTable += ,('Fallback Compatible Mode', (testForNull $EnabledLookup $TlsProfile.IE.FallbackCompatibleMode), '' , '')
 										if ($TlsProfile.IE.MutualAuth -eq '1')
 										{
 											$TlsProfileTable += ,('Validate Client FQDN', $EnabledLookup.Get_Item($TlsProfile.IE.ValidateClientFQDN), '' , '')
 										}
-										$TlsProfileTable += ,('Certificate', (Test-ForNull -LookupTable $CertificateLookup -value $TlsProfile.IE.ClientCertificate), '' , '')
 										$TLSCollection += , ('TLS Profiles', $TlsProfileDescripion, '', $TlsProfileTable)
 									}
 									#The $TLSCollection is added to $SecurityData just prior to printing to ensure the correct ordering in the DOCX
@@ -5174,11 +5137,17 @@ begin
 											if ($IsdnGroup.IE.classname -eq $null) { continue } # Empty / deleted entry
 											$IsdnSGTable = @() #null the collection for each table
 											$isgnGroupDescription = Fix-NullDescription -TableDescription $IsdnGroup.IE.Description -TableValue $IsdnGroup.value -TablePrefix 'SG #'
-											$SgTableLookup.Add($IsdnGroup.value, '(ISDN) ' + $isgnGroupDescription)
 											#Now build the table:
 											$IsdnSGTable += ,('SPAN', 'ISDN Signaling Group', '' , '')
 											$IsdnSGTable += ,('Description', $isgnGroupDescription, '' , '')
-											$IsdnSGTable += ,('Admin State', $EnabledLookup.Get_Item($IsdnGroup.IE.Enabled), '', '')
+											if ($IsdnGroup.IE.customAdminState -eq $null)
+											{
+												$IsdnSGTable += ,('Admin State', $EnabledLookup.Get_Item($IsdnGroup.IE.Enabled), '', '')
+											}
+											else
+											{
+												$IsdnSGTable += ,('Admin State', $EnabledLookup.Get_Item($IsdnGroup.IE.customAdminState), '', '')
+											}
 											$IsdnSGTable += ,('SPAN-L', 'Channels and Routing', 'SPAN-R', 'Port and Protocol')
 											# Columns Diverge here. Prepare the table, building the L & R columns as independent arrays, then consolidating them together ready for Word.
 											$ISDNSgL1 = @()
@@ -5407,7 +5376,7 @@ begin
 											$IsdnSGTable += ,('T314', $IsdnGroup.IE.IsdnSgTimerT314, '' , '')
 											$IsdnSGTable += ,('T316', $IsdnGroup.IE.IsdnSgTimerT316, '' , '')
 											$IsdnSGTable += ,('T322', $IsdnGroup.IE.IsdnSgTimerT322, '' , '')
-											$SGData += , ('ISDN', ('(ISDN) {0}' -f ($isgnGroupDescription)), '', $IsdnSGTable)
+											$SGData += , ('ISDN', $isgnGroupDescription, '', $IsdnSGTable)
 										}
 									}
 								}
@@ -5421,35 +5390,629 @@ begin
 										ForEach ($SIPgroup in $SIPgroups)
 										{
 											if ($SIPgroup.IE.classname -eq $null) { continue } # Empty / deleted entry
-											$SipSGTable = @() #null the collection for each table
-											#Consolidate all of the host and mask values (old versions had them separated, newer firmware they're all comma-separated together in the one field):
-											$SIPGroupFederationIP = ''
-											$SIPGroupRemoteHosts = ''
-											$SIPGroupRemoteMasks = ''
-											if ($SIPgroup.IE.RemoteHosts -eq $null)
+											if ([int]$SIPgroup.value -lt 50000)
 											{
-												#It's O-L-D firmware. Each one of up to 6 hosts and masks is a separate element
-												for ($i = 1 ; $i -le 6 ; $i++)
+												#It's a "proper" SIP Signaling group (as distinct from a v9.0.0+ SIP *recorder* group, which we'll handle in the "else" below)
+												$SipSGTable = @() #null the collection for each table
+												#Consolidate all of the host and mask values (old versions had them separated, newer firmware they're all comma-separated together in the one field):
+												$SIPGroupFederationIP = ''
+												$SIPGroupRemoteHosts = ''
+												$SIPGroupRemoteMasks = ''
+												if ($SIPgroup.IE.RemoteHosts -eq $null)
 												{
-													if (($SIPGroup.IE.('RemoteHost' + $i) -eq '') -and ($SIPGroup.IE.('RemoteMask' + $i) -eq '')) { continue } #null entry
-													if ($SIPGroup.IE.('RemoteMask' + $i) -eq '')
+													#It's O-L-D firmware. Each one of up to 6 hosts and masks is a separate element
+													for ($i = 1 ; $i -le 6 ; $i++)
 													{
-														$SIPGroupFederationIP += $SIPGroup.IE.('RemoteHost' + $i) + " / <n/a>`n"
+														if (($SIPGroup.IE.('RemoteHost' + $i) -eq '') -and ($SIPGroup.IE.('RemoteMask' + $i) -eq '')) { continue } #null entry
+														if ($SIPGroup.IE.('RemoteMask' + $i) -eq '')
+														{
+															$SIPGroupFederationIP += $SIPGroup.IE.('RemoteHost' + $i) + " / <n/a>`n"
+														}
+														else
+														{
+															$SIPGroupFederationIP += $SIPGroup.IE.('RemoteHost' + $i) + ' / ' + $SIPGroup.IE.('RemoteMask' + $i) + "`n"
+														}
+													}
+												}
+												else
+												{
+													$SIPGroupRemoteHosts = ($SIPgroup.IE.RemoteHosts).Split(',')
+													$SIPGroupRemoteMasks = ($SIPgroup.IE.RemoteMasks).Split(',')
+													for ($i = 0 ; $i -le ($SIPGroupRemoteHosts.Count-1); $i++)
+													{
+														if (($SIPGroupRemoteHosts[$i] -eq '') -and ($SIPGroupRemoteMasks[$i] -eq '')) { continue} #Skip a null entry
+														if ($SIPGroupRemoteMasks[$i] -eq '')
+														{
+															$SIPGroupFederationIP += $SIPGroupRemoteHosts[$i] + " / <n/a>`n"
+														}
+														else
+														{
+															$SIPGroupFederationIP += $SIPGroupRemoteHosts[$i] + ' / ' + $SIPGroupRemoteMasks[$i] + "`n"
+														}
+													}
+												}
+												$SIPGroupFederationIP = Strip-TrailingCR -DelimitedString $SIPGroupFederationIP
+												if ($SIPGroupFederationIP -eq '') { $SIPGroupFederationIP = '-- Table is empty --' }
+												$SIPgroupDescription = Fix-NullDescription -TableDescription $SIPgroup.IE.Description -TableValue $SIPgroup.value -TablePrefix 'SG #'
+												#Now build the table:
+												$SipSGTable += ,('SPAN', 'SIP Signaling Group', '' , '')
+												$SipSGTable += ,('Description', $SIPgroupDescription, '' , '')
+												if ($SIPgroup.IE.customAdminState -eq $null)
+												{
+													$SipSGTable += ,('Admin State', $EnabledLookup.Get_Item($SIPgroup.IE.Enabled), '', '')
+												}
+												else
+												{
+													$SipSGTable += ,('Admin State', $EnabledLookup.Get_Item($SIPgroup.IE.customAdminState), '', '')
+												}
+												$SipSGTable += ,('SPAN-L', 'SIP Channels and Routing', 'SPAN-R', 'Media Information')
+												#From here I split the page into LH and RH columns to deal with all the possible different combinations.
+												$SIPSgL1 = @()
+												$SIPSgL2 = @()
+												$SIPSgR1 = @()
+												$SIPSgR2 = @()
+												#LH:
+												$SIPSgL1 += 'Action Set'
+												$SIPSgL2 += $ActionSetLookup.Get_Item($SIPgroup.IE.ActionSetTableID)
+												$SIPSgL1 += 'Call Routing Table'
+												$SIPSgL2 += $CallRoutingTableLookup.Get_Item($SIPgroup.IE.RouteTableID)
+												$SIPSgL1 += 'Channels'
+												$SIPSgL2 += $SIPgroup.IE.Channels
+												$SIPSgL1 += 'SIP profile'
+												$SIPSgL2 += $SipProfileIdLookup.Get_Item($SIPgroup.IE.ProfileID)
+												# ----- OK, table handling gets a little ugly here depending upon the value of 'SIP MODE'
+												switch ($SIPgroup.IE.Monitor)
+												{
+													'3' # 'Basic Call'
+													{
+														$SIPSgL1 += 'SIP Mode'
+														$SIPSgL2 += 'Basic Call'
+														$SIPSgL1 += 'Agent Type'
+														if ($SIPgroup.IE.AgentType -eq $null)
+														{
+															$SIPSgL2 += '<n/a this rls>'
+														}
+														else
+														{
+															switch ($SIPgroup.IE.AgentType)
+															{
+																'0'
+																{
+																	$SIPSgL2 += 'Back-to-Back User Agent'
+																	if ($SWeLite)
+																	{
+																		# We don't show Interop Mode for B2B-AU
+																	}
+																	else
+																	{
+																		$SIPSgL1 += 'Interop Mode'
+																		if ($SIPgroup.IE.InteropMode -eq $null)
+																		{
+																			$SIPSgL2 += '<n/a this rls>'
+																		}
+																		else
+																		{
+																			switch ($SIPgroup.IE.InteropMode)
+																			{
+																				'0'
+																				{
+																					$SIPSgL2 += 'Standard'
+																				}
+																				'2'
+																				{
+																					$SIPSgL2 += 'Office 365'
+																					$SIPSgL1 += 'Office365 User Domain Suffix'
+																					$SIPSgL2 += $SIPgroup.IE.Office365FQDN
+																				}
+																				'3'
+																				{
+																					$SIPSgL2 += 'Office 365 w/AD PBX'
+																					$SIPSgL1 += 'AD Attribute'
+																					$SIPSgL2 += $SIPgroup.IE.ADAttribute
+																					$SIPSgL1 += 'AD Update Frequency'
+																					$SIPSgL2 += $SIPgroup.IE.ADUpdateFrequency + ' [1..30] days'
+																					$SIPSgL1 += 'AD First Update Time'
+																					$SIPSgL2 += $SIPgroup.IE.ADFirstUpdateTime + ' [hh:mm:ss]'
+																					$SIPSgL1 += 'Office365 User Domain Suffix'
+																					$SIPSgL2 += $SIPgroup.IE.Office365FQDN
+																				}
+																				default
+																				{
+																					$SIPSgL2 += '<Unhandled Value>'
+																				}
+																			}
+																		}
+																	}
+																}
+																'1'
+																{
+																	$SIPSgL2 += 'Access Mode'
+																	$SIPSgL1 += 'Interop Mode'
+																	$SIPSgL2 += Test-ForNull -LookupTable $SipSgInteropModeLookup -value $SIPgroup.IE.InteropMode
+																	$SIPSgL1 += 'Registrant TTL'
+																	$SIPSgL2 += $SIPgroup.IE.RegistrantTTL
+																}
+																default { $SIPSgL2 += '<Unhandled Value>' }
+															}
+														}
+														$SIPSgL1 += 'SIP Server Table'
+														$SIPSgL2 += $SIPServerTablesLookup.Get_Item($SIPgroup.IE.ServerClusterID)
+													}
+													'1' # 'Fwd Reg after local processing'
+													{
+														$SIPSgL1 += 'SIP Mode'
+														$SIPSgL2 += 'Fwd Reg. After Local Processing'
+														$SIPSgL1 += 'Registrar'
+														$SIPSgL2 += $SIPRegistrarsLookup.Get_Item($SIPgroup.IE.RegistrarID)
+														$SIPSgL1 += 'Registrar Min TTL'
+														$SIPSgL2 += $SIPgroup.IE.RegistrarTTL
+														$SIPSgL1 += 'Outbound Registrant TTL'
+														$SIPSgL2 += $SIPgroup.IE.OutboundRegistrarTTL
+														$SIPSgL1 += 'SIP Server Table'
+														$SIPSgL2 += $SIPServerTablesLookup.Get_Item($SIPgroup.IE.ServerClusterID)
+													}
+													'2' # 'Local Registrar'
+													{
+														$SIPSgL1 += 'SIP Mode'
+														$SIPSgL2 += 'Local Registrar'
+														$SIPSgL1 += 'Registrar'
+														$SIPSgL2 += $SIPRegistrarsLookup.Get_Item($SIPgroup.IE.RegistrarID)
+														$SIPSgL1 += 'Agent Type'
+														if ($SIPgroup.IE.AgentType -eq $null)
+														{
+															$SIPSgL2 += '<n/a this rls>'
+														}
+														else
+														{
+															switch ($SIPgroup.IE.AgentType)
+															{
+																'0'
+																{
+																	$SIPSgL2 += 'Back-to-Back User Agent'
+																}
+																'1'
+																{
+																	$SIPSgL2 += 'Access Mode'
+																	$SIPSgL1 += 'Interop Mode'
+																	$SIPSgL2 += Test-ForNull -LookupTable $SipSgInteropModeLookup -value $SIPgroup.IE.InteropMode
+																}
+																default
+																{
+																	$SIPSgL2 += '<Unhandled Value>'
+																}
+															}
+														}
+														$SIPSgL1 += 'Registrar Min TTL'
+														$SIPSgL2 += Test-ForNull -LookupTable $null -value $SIPgroup.IE.RegistrarTTL
+													}
+												}
+												$SIPSgL1 += 'Load Balancing'
+												$SIPSgL2 += $SipLoadBalancingLookup.Get_Item($SIPgroup.IE.ServerSelection)
+												$SIPSgL1 += 'Channel Hunting'
+												$SIPSgL2 += $SgHuntMethodLookup.Get_Item($SIPgroup.IE.HuntMethod)
+												$SIPSgL1 += 'Notify Lync CAC Profile'
+												$SIPSgL2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.NotifyCACProfile
+												if (($SIPgroup.IE.Monitor -eq '2') -and ($SIPgroup.IE.AgentType -eq '1'))
+												{
+													#'Challenge request' is hidden if (in Rls 4+) SIP Mode = 'Local Registrar' and Agent Type = 'Access Mode'
+												}
+												else
+												{
+													if ($SIPgroup.IE.ChallengeRequest -eq '0')
+													{
+														$SIPSgL1 += 'Challenge Request'
+														$SIPSgL2 += 'Disable'
 													}
 													else
 													{
-														$SIPGroupFederationIP += $SIPGroup.IE.('RemoteHost' + $i) + ' / ' + $SIPGroup.IE.('RemoteMask' + $i) + "`n"
+														$SIPSgL1 += 'Challenge Request'
+														$SIPSgL2 += 'Enable'
+														$SIPSgL1 += 'Authorization Realm'
+														$SIPSgL2 += $SIPgroup.IE.AuthorizationRealm
+														$SIPSgL1 += 'Local/Pass-thru Auth Table'
+														$SIPSgL2 += $SIPAuthorisationTableLookup.Get_Item($SIPgroup.IE.ProxyAuthorizationTableID)
+														$SIPSgL1 += 'Nonce Expiry'
+														if ($SIPgroup.IE.NonceLifetime -eq 0)
+														{
+															$SIPSgL2 += 'Forever'
+														}
+														else
+														{
+															$SIPSgL2 += 'Limited'
+															$SIPSgL1 += 'Nonce Lifetime'
+															$SIPSgL2 += $SIPgroup.IE.NonceLifetime
+														}
 													}
 												}
+												$SIPSgL1 += 'Outbound Proxy IP/FQDN'
+												$SIPSgL2 += $SIPgroup.IE.OutboundProxy
+												if (($SIPgroup.IE.ProxyIpVersion -eq $null) -or ($SIPgroup.IE.OutboundProxy -eq ''))
+												{
+													# Don't show 'Proxy IP Version'
+												}
+												else
+												{
+													try
+													{
+														if ([ipaddress]$SIPgroup.IE.OutboundProxy) {}
+														# It's an IP address: Don't show 'Proxy IP Version'
+													}
+													catch
+													{
+														#It's not a valid IP, or it's a hostname
+														$SIPSgL1 += 'Proxy IP Version'
+														$SIPSgL2 += Test-ForNull -LookupTable $IpVersionLookup -value $SIPgroup.IE.ProxyIpVersion
+													}
+												}
+												$SIPSgL1 += 'Outbound Proxy Port'
+												if ($SIPgroup.IE.OutboundProxyPort -eq '0')
+												{
+													$SIPSgL2 += ''
+												}
+												else
+												{
+													$SIPSgL2 += ($SIPgroup.IE.OutboundProxyPort + ' [1024..65535]')
+												}
+												if ($SWeLite)
+												{
+													#Doesn't show
+												}
+												else
+												{
+													$SIPSgL1 += 'No Channel Available Override'
+													$SIPSgL2 += Test-ForNull -LookupTable $Q850DescriptionLookup -value $SIPgroup.IE.NoChannelAvailableId
+												}
+												$SIPSgL1 += 'Call Setup Response Timer'
+												if ($SIPgroup.IE.TimerSanitySetup -eq $null)
+												{
+													$SIPSgL2 += '<n/a this rls>'
+												}
+												else
+												{
+													$SIPSgL2 += (($SIPgroup.IE.TimerSanitySetup / 1000).ToString() + ' [180..750] secs')
+												}
+												$SIPSgL1 += 'Call Proceeding Timer'
+												if ($SIPgroup.IE.TimerCallProceeding -eq $null)
+												{
+													$SIPSgL2 += '<n/a this rls>'
+												}
+												else
+												{
+													$SIPSgL2 += (($SIPgroup.IE.TimerCallProceeding / 1000).ToString() + ' [24..750] secs')
+												}
+												if ($SWeLite)
+												{
+													# QoE Reporting does not show
+												}
+												else
+												{
+													$SIPSgL1 += 'QoE Reporting'
+													$SIPSgL2 += Test-ForNull -LookupTable $EnabledLookup -value $SIPgroup.IE.QoEReporting
+												}
+												#v5.0: SYM-19541 RegisterKeepAlive in SIP Signaling Group should be displayed only if AgentType=B2BUA
+												# We also need to have SIP Mode either 'Basic Call' or 'Forward Reg' (i.e. not 'Local Registrar')
+												if (($SIPgroup.IE.AgentType -eq '0') -and ($SIPgroup.IE.Monitor -ne '2'))
+												{
+													$SIPSgL1 += 'Use Register as Keep Alive'
+													$SIPSgL2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.RegisterKeepAlive
+												}
+												$SIPSgL1 += 'Forked Call Answered Too Soon'
+												if ($SIPgroup.IE.RelOnQckConnect -eq $null)
+												{
+													$SIPSgL2 += '<n/a this rls>'
+												}
+												else
+												{
+													if ($SIPgroup.IE.RelOnQckConnect -eq '0')
+													{
+														$SIPSgL2 += 'Disable'
+													}
+													else
+													{
+														$SIPSgL2 += 'Enable'
+														$SIPSgL1 += 'Answer Too Soon Timer'
+														$SIPSgL2 += (($SIPgroup.IE.RelOnQckConnectTimer).ToString() + ' [1..5000] ms')
+													}
+												}
+												$SIPSgL1 += 'SPAN-L'
+												$SIPSgL2 += 'SIP Recording'
+												$SIPSgL1 += 'SIP Recording Status'
+												$SIPSgL2 += Test-ForNull -LookupTable $EnabledLookup -value $SIPgroup.IE.SipRecordingStatus
+												if ($SIPgroup.IE.SipRecordingStatus -eq 1)
+												{
+													$SIPSgL1 += "SIP Recorder"
+													$SIPSgL2 += $SgTableLookup.Get_Item($SIPgroup.IE.SipRecorder)
+												}
+												#RH:
+												if ($SIPgroup.IE.RTPDirectMode -ne $null)
+												{
+													# From v5.0 (and with the arrival of RTPDirectMode) the display changes:
+													$AudioFaxStreamMode = ''
+													if ($SWeLite)
+													{
+														$SIPSgR1 += 'Supported Audio Modes'
+													}
+													else
+													{
+														$SIPSgR1 += 'Supported Audio/Fax Modes'
+													}
+													if ($SIPgroup.IE.RTPMode -eq '1') { $AudioFaxStreamMode += "DSP`n" }
+													if ($SIPgroup.IE.RTPProxyMode  -eq '1') { $AudioFaxStreamMode += "Proxy`n" }
+													if ($SIPgroup.IE.RTPDirectMode -eq '1') { $AudioFaxStreamMode += "Direct`n" }
+													if ($SWeLite)
+													{
+														if ($SIPgroup.IE.RTPProxySrtpMode -eq '1') { $AudioFaxStreamMode += "Proxy with Local SRTP`n" }
+													}
+													$SIPSgR2 += Strip-TrailingCR -DelimitedString $AudioFaxStreamMode
+												}
+												else
+												{
+													# Pre-v5.0 layout:
+													$SIPSgR1 += 'Audio/Fax Stream Proxy Mode'
+													$SIPSgR2 += Test-ForNull -LookupTable $EnabledLookup -value $SIPgroup.IE.RTPProxyMode
+													$SIPSgR1 += 'Audio/Fax Stream DSP Mode'
+													$SIPSgR2 += Test-ForNull -LookupTable $EnabledLookup -value $SIPgroup.IE.RTPMode
+												}
+												$SIPSgR1 += 'Supported Video/Application Modes'
+												if ($SWeLite)
+												{
+													$SIPSgR2 += 'Disabled'
+												}
+												else
+												{
+													if ($LicencedForVideo -eq $null)
+													{
+														# This will be null if we're reading from an XML as there's no licencing info available
+														$SIPSgR2 += '<Unknown>'
+													}
+													else
+													{
+														if ($LicencedForVideo)
+														{
+															$VideoStreamMode = ''
+															if ($SIPgroup.IE.VideoProxyMode  -eq '1') { $VideoStreamMode += "Proxy`n"  }
+															if ($SIPgroup.IE.VideoDirectMode -eq '1') { $VideoStreamMode += "Direct`n" }
+															if ($VideoStreamMode -eq '') { $VideoStreamMode = "[None]" }
+															$SIPSgR2 += Strip-TrailingCR -DelimitedString $VideoStreamMode
+														}
+														else
+														{
+															$SIPSgR2 += 'Disabled'
+														}
+													}
+												}
+												if (($SIPgroup.IE.RTPMode -eq $null) -or ($SIPgroup.IE.RTPMode -eq '1'))
+												{
+													#If RTP DSP Mode is Disabled, hide all of these values (Part 1):
+													$SIPSgR1 += 'Media List ID'
+													$SIPSgR2 += $MediaListProfileLookup.Get_Item($SIPgroup.IE.MediaConfigID)
+												}
+												if ($SWeLite -and $SIPgroup.IE.RTPProxySrtpMode -eq '1')
+												{
+													$SIPSgR1 += 'Proxy Local SRTP Crypto Profile ID'
+													$SIPSgR2 += $SDESMediaCryptoProfileLookup.Get_Item($SIPgroup.IE.CryptoProfileID)
+												}
+												if (($SIPgroup.IE.RTPMode -eq $null) -or ($SIPgroup.IE.RTPMode -eq '1'))
+												{
+													$SIPSgR1 += 'Play Ringback'
+													$SIPSgR2 += $SipRingbackLookup.Get_Item($SIPgroup.IE.RingBack)
+													if ($SIPgroup.IE.RingBack -ne 2)
+													{
+														$SIPSgR1 += 'Tone Table'
+														$SIPSgR2 += $ToneTableLookup.Get_Item($SIPgroup.IE.ToneTableID)
+													}
+													$SIPSgR1 += 'Play Congestion Tone'
+													$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.PlayCongestionTone
+													$SIPSgR1 += 'Early 183'
+													$SIPSgR2 += $EnableLookup.Get_Item($SIPgroup.IE.Early183)
+												}
+												elseif ($SWeLite)
+												{
+													#So as at v7.0, if you DON'T have 'DSP' as a media type, the Lite still gives you a Tone Table option:
+													$SIPSgR1 += 'Tone Table'
+													$SIPSgR2 += $ToneTableLookup.Get_Item($SIPgroup.IE.ToneTableID)
+												}
+												# But everyone gets 'Allow Refresh DSP':
+												$SIPSgR1 += 'Allow Refresh SDP'
+												$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.AllowRefreshSDP
+												if (($SIPgroup.IE.RTPMode -eq $null) -or ($SIPgroup.IE.RTPMode -eq '1'))
+												{
+													#If RTP DSP Mode is Disabled, hide all of these values (Part 2):
+													$SIPSgR1 += 'Music On Hold'
+													$SIPSgR2 += Test-ForNull -LookupTable $SipSgMOHLookup -value $SIPgroup.IE.SGLevelMOHService
+												}
+												$SIPSgR1 += 'RTCP Multiplexing'
+												$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.RTCPMultiplexing
+												$SIPSgR1 += 'SPAN-R'
+												$SIPSgR2 += 'Mapping Tables'
+												$SIPSgR1 += 'SIP to Q.850 Override Table'
+												$SIPSgR2 += $SIPToQ850TableLookup.Get_Item($SIPgroup.IE.SIPtoQ850_TableID)
+												$SIPSgR1 += 'Q.850 to SIP Override Table'
+												$SIPSgR2 += $Q850ToSIPTableLookup.Get_Item($SIPgroup.IE.Q850toSIP_TableID)
+												$SIPSgR1 += 'Pass-thru Peer SIP Response Code'
+												$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.PassthruPeerSIPRespCode
+												if ($SIPgroup.IE.ServerSelection -eq '4')
+												{
+													$SIPSgR1 += 'SIP Failover Cause Codes'
+													$SipSgResponseCodes = $null
+													$SipResponseCodesList = ($SIPgroup.IE.SipResponseCodes).Split(',') #Value in the file is formatted as '0,2'
+													foreach ($SipResponseCode in $SipResponseCodesList)
+													{
+														$SipSgResponseCodes += ($SIPDescriptionLookup.Get_Item($SipResponseCode) + "`n")
+													}
+													$SIPSgR2 += Strip-TrailingCR -DelimitedString $SipSgResponseCodes
+												}
+												$SIPSgR1 += 'SPAN-R'
+												$SIPSgR2 += 'SIP IP Details'
+												$SIPSgR1 += 'Teams Local Media Optimization'
+												$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.MediaOptimization
+												if ($SIPgroup.IE.NATTraversalType -eq '0') #Outbound NAT
+												{
+													$SIPSgR1 += 'Signaling/Media Source IP'
+													$SIPSgR2 += $PortToIPAddressLookup.Get_Item($SIPgroup.IE.NetInterfaceSignaling)
+												}
+												else
+												{
+													$SIPSgR1 += 'Signaling/Media Private IP'
+													$SIPSgR2 += $PortToIPAddressLookup.Get_Item($SIPgroup.IE.NetInterfaceSignaling)
+												}
+												if ($SIPgroup.IE.MediaOptimization -eq '1')
+												{
+													$SIPSgR1 += 'Private Media Source IP'
+													$SIPSgR2 += $PortToIPAddressLookup.Get_Item($SIPgroup.IE.PrivateMediaSourceIp)
+												}
+												$SIPSgR1 += 'Signaling DSCP'
+												$SIPSgR2 += Test-ForNull -LookupTable $null -value $SIPgroup.IE.DSCP
+												if (($SIPgroup.IE.Monitor -eq '3') -and ($SIPgroup.IE.AgentType -eq '0'))
+												{
+													# "If SIP Mode = Basic Call & Agent Type = B2BUA"
+													$SIPSgR1 += 'SPAN-R'
+													$SIPSgR2 += 'NAT Traversal'
+													$SIPSgR1 += 'ICE Support'
+													$SIPSgR2 += Test-ForNull -LookupTable $EnabledLookup -value $SIPgroup.IE.ICESupport
+													if ($SIPgroup.IE.ICESupport -eq '1')
+													{
+														$SIPSgR1 += 'ICE Mode'
+														$SIPSgR2 += Test-ForNull -LookupTable $ICEModeLookup -value $SIPgroup.IE.ICEMode
+													}
+												}
+												$SIPSgR1 += 'SPAN-R'
+												$SIPSgR2 += 'Static NAT - Outbound'
+												if ($SIPgroup.IE.NATTraversalType -eq '0')
+												{
+													$SIPSgR1 += 'Outbound NAT Traversal'
+													$SIPSgR2 += 'None'
+												}
+												else
+												{
+													$SIPSgR1 += 'Outbound NAT Traversal'
+													$SIPSgR2 += 'Static NAT'
+													$SIPSgR1 += 'NAT Public IP (Signaling/Media)'
+													$SIPSgR2 += $SIPgroup.IE.NATPublicIPAddress
+												}
+												$SIPSgR1 += 'SPAN-R'
+												$SIPSgR2 += 'Static NAT - Inbound'
+												$SIPSgR1 += 'Detection'
+												if ($SIPgroup.IE.InboundNATTraversalDetection -eq $null)
+												{
+													$SIPSgR2 += '<n/a this rls>'
+												}
+												else
+												{
+													if ($SIPgroup.IE.InboundNATTraversalDetection -eq '0')
+													{
+														$SIPSgR2 += 'Disabled'
+													}
+													else
+													{
+														$SIPSgR2 += 'Enabled'
+														$SIPSgR1 += 'Qualified Prefixes Table'
+														$SIPSgR2 += $SIPNATPrefixesLookup.Get_Item($SIPgroup.IE.InboundNATQualifiedPrefixesTableID)
+														$SIPSgR1 += 'Secure Media Latching'
+														if ($SIPgroup.IE.InboundSecureNATMediaLatching -eq '0')
+														{
+															$SIPSgR2 += 'Disabled'
+														}
+														else
+														{
+															$SIPSgR2 += 'Enabled'
+															$SIPSgR1 += 'Secure Media Netmask'
+															$SIPSgR2 += $SIPgroup.IE.InboundSecureNATMediaPrefix
+														}
+														$SIPSgR1 += 'Registrar Max. TTL Enabled'
+														if ($SIPgroup.IE.InboundNATPeerRegistrarMaxEnabled -eq '0')
+														{
+															$SIPSgR2 += 'No'
+														}
+														else
+														{
+															$SIPSgR2 += 'Yes'
+															$SIPSgR1 += 'Registrar Max. TTL'
+															$SIPSgR2 += ($SIPgroup.IE.InboundNATPeerRegistrarMaxTTL + ' [30..86400] secs')
+														}
+													}
+												}
+												#Reassemble the above back into the correct column appearances for Word. Reconstitute for the length of the larger array
+												if ($SIPSgL1.Count -ge $SIPSgR1.Count)
+												{
+													$arrayCount = $SIPSgL1.Count
+												}
+												else
+												{
+													$arrayCount = $SIPSgR1.Count
+												}
+												for ($i = 0; $i -lt $arrayCount; $i++)
+												{
+													if (($SIPSgL1[$i] -eq ''   ) -and ($SIPSgL2[$i] -eq ''   ) -and ($SIPSgR1[$i] -eq ''   ) -and ($SIPSgR2[$i] -eq ''   )) {continue} #No point writing a totally blank row!
+													if (($SIPSgL1[$i] -eq $null) -and ($SIPSgL2[$i] -eq $null) -and ($SIPSgR1[$i] -eq $null) -and ($SIPSgR2[$i] -eq $null)) {continue} #No point writing a totally blank row!
+													$SipSGTable += ,($SIPSgL1[$i], $SIPSgL2[$i], $SIPSgR1[$i], $SIPSgR2[$i])
+												}
+												$SipSGTable += ,('SPAN-L','Listen Ports', 'SPAN-R', 'Federated IP/FQDN')
+												#Build the rows here - Listen Ports first
+												$SIPListenList = ''
+												for ($i = 1; $i -le 6; $i++)
+												{
+													if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
+													{
+															$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+													}
+												}
+												$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+												$SipSGTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												$SipSGTable += ,('SPAN', 'Message Manipulation', '', '')
+												#Are we doing message manipulation?
+												if ($SIPgroup.IE.IngressSPRMessageTableList -eq $null)
+												{
+													$SipSGTable += ,('Message Manipulation', '<n/a this rls>', '', '')
+												}
+												else
+												{
+													if (($SIPgroup.IE.IngressSPRMessageTableList -eq '') -and ($SIPgroup.IE.EgressSPRMessageTableList -eq ''))
+													{
+														$SipSGTable += ,('Message Manipulation', 'Disabled', '', '')
+													}
+													else
+													{
+														$SIPInboundMsgTrnList = ''
+														$SIPOutboundMsgTrnList = ''
+														if ($SIPgroup.IE.IngressSPRMessageTableList -ne $null)
+														{
+															$InboundMsgList = ($SIPgroup.IE.IngressSPRMessageTableList).Split(',')
+															foreach ($InboundMsgListEntry in $InboundMsgList)
+															{
+																$SIPInboundMsgTrnList += $SIPMessageRuleLookup.Get_Item($InboundMsgListEntry)
+																$SIPInboundMsgTrnList += "`n"
+															}
+															$SIPInboundMsgTrnList = Strip-TrailingCR -DelimitedString $SIPInboundMsgTrnList
+														}
+														if ($SIPgroup.IE.EgressSPRMessageTableList -ne $null)
+														{
+															$OutboundMsgList = ($SIPgroup.IE.EgressSPRMessageTableList).Split(',')
+															foreach ($OutboundMsgListEntry in $OutboundMsgList)
+															{
+																$SIPOutboundMsgTrnList += $SIPMessageRuleLookup.Get_Item($OutboundMsgListEntry)
+																$SIPOutboundMsgTrnList += "`n"
+															}
+															$SIPOutboundMsgTrnList = Strip-TrailingCR -DelimitedString $SIPOutboundMsgTrnList
+														}
+														$SipSGTable += ,('Message Manipulation', 'Enabled', '', '')
+														$SipSGTable += ,('SPAN-L', 'Inbound Message Table List', 'SPAN-R', 'Outbound Message Table List')
+														$SipSGTable += ,('Inbound Message Table List', $SIPInboundMsgTrnList, 'Outbound Message Table List', $SIPOutboundMsgTrnList)
+													}
+												}
+												$SGData += , ('SIP', $SIPgroupDescription, '', $SipSGTable)
 											}
 											else
 											{
+												$SIPRecTable = @() #null the collection for each table
+												#Consolidate all of the host and mask values (old versions had them separated, newer firmware they're all comma-separated together in the one field):
+												$SIPGroupFederationIP = ''
 												$SIPGroupRemoteHosts = ($SIPgroup.IE.RemoteHosts).Split(',')
 												$SIPGroupRemoteMasks = ($SIPgroup.IE.RemoteMasks).Split(',')
 												for ($i = 0 ; $i -le ($SIPGroupRemoteHosts.Count-1); $i++)
 												{
 													if (($SIPGroupRemoteHosts[$i] -eq '') -and ($SIPGroupRemoteMasks[$i] -eq '')) { continue} #Skip a null entry
-													if ($SIPGroupRemoteMasks[$i] -eq '')
+													if  ($SIPGroupRemoteMasks[$i] -eq '')
 													{
 														$SIPGroupFederationIP += $SIPGroupRemoteHosts[$i] + " / <n/a>`n"
 													}
@@ -5458,562 +6021,107 @@ begin
 														$SIPGroupFederationIP += $SIPGroupRemoteHosts[$i] + ' / ' + $SIPGroupRemoteMasks[$i] + "`n"
 													}
 												}
-											}
-											$SIPGroupFederationIP = Strip-TrailingCR -DelimitedString $SIPGroupFederationIP
-											if ($SIPGroupFederationIP -eq '') { $SIPGroupFederationIP = '-- Table is empty --' }
-											$SIPgroupDescription = Fix-NullDescription -TableDescription $SIPgroup.IE.Description -TableValue $SIPgroup.value -TablePrefix 'SG #'
-											$SgTableLookup.Add($SIPgroup.value, '(SIP) ' + $SIPgroupDescription)
-											#Now build the table:
-											$SipSGTable += ,('SPAN', 'SIP Signaling Group', '' , '')
-											$SipSGTable += ,('Description', $SIPgroup.IE.Description, '' , '')
-											$SipSGTable += ,('Admin State', $EnabledLookup.Get_Item($SIPgroup.IE.Enabled), '', '')
-											$SipSGTable += ,('SPAN-L', 'SIP Channels and Routing', 'SPAN-R', 'Media Information')
-											#From here I split the page into LH and RH columns to deal with all the possible different combinations.
-											$SIPSgL1 = @()
-											$SIPSgL2 = @()
-											$SIPSgR1 = @()
-											$SIPSgR2 = @()
-											#LH:
-											$SIPSgL1 += 'Action Set'
-											$SIPSgL2 += $ActionSetLookup.Get_Item($SIPgroup.IE.ActionSetTableID)
-											$SIPSgL1 += 'Call Routing Table'
-											$SIPSgL2 += $CallRoutingTableLookup.Get_Item($SIPgroup.IE.RouteTableID)
-											$SIPSgL1 += 'Channels'
-											$SIPSgL2 += $SIPgroup.IE.Channels
-											$SIPSgL1 += 'SIP profile'
-											$SIPSgL2 += $SipProfileIdLookup.Get_Item($SIPgroup.IE.ProfileID)
-											# ----- OK, table handling gets a little ugly here depending upon the value of 'SIP MODE'
-											switch ($SIPgroup.IE.Monitor)
-											{
-												'3' # 'Basic Call'
+												$SIPGroupFederationIP = Strip-TrailingCR -DelimitedString $SIPGroupFederationIP
+												if ($SIPGroupFederationIP -eq '') { $SIPGroupFederationIP = '-- Table is empty --' }
+												$SIPgroupDescription = Fix-NullDescription -TableDescription $SIPgroup.IE.Description -TableValue $SIPgroup.value -TablePrefix 'SIPREC SG #'
+												#Now build the table:
+												$SIPRecTable += ,('SPAN', 'SIP Recording Table', '' , '')
+												$SIPRecTable += ,('Description', $SIPgroup.IE.Description, '' , '')
+												$SIPRecTable += ,('Admin State', $EnabledLookup.Get_Item($SIPgroup.IE.customAdminState), '', '')
+												$SIPRecTable += ,('SPAN-L', 'SIP Channels and Routing', 'SPAN-R', 'SIP IP Details')
+												#From here I split the page into LH and RH columns to deal with all the possible different combinations.
+												$SIPRecL1 = @()
+												$SIPRecL2 = @()
+												$SIPRecR1 = @()
+												$SIPRecR2 = @()
+												#LH:
+												$SIPRecL1 += 'Channels'
+												$SIPRecL2 += $SIPgroup.IE.Channels
+												$SIPRecL1 += 'SIP profile'
+												$SIPRecL2 += $SipProfileIdLookup.Get_Item($SIPgroup.IE.ProfileID)
+												
+												$SIPRecL1 += 'Recording Server Table'
+												$SIPRecL2 += $SIPServerTablesLookup.Get_Item($SIPgroup.IE.ServerClusterId)
+												
+												$SIPRecL1 += 'Load Balancing'
+												$SIPRecL2 += $SipLoadBalancingLookup.Get_Item($SIPgroup.IE.ServerSelection)
+												$SIPRecL1 += 'Channel Hunting'
+												$SIPRecL2 += $SgHuntMethodLookup.Get_Item($SIPgroup.IE.HuntMethod)
+												#RH:
+												$SIPRecR1 += 'Signaling/Media Source IP'
+												$SIPRecR2 += $PortToIPAddressLookup.Get_Item($SIPgroup.IE.NetInterfaceSignaling)
+												$SIPRecR1 += 'Signaling DSCP'
+												$SIPRecR2 += Test-ForNull -LookupTable $null -value $SIPgroup.IE.DSCP
+												#Reassemble the above back into the correct column appearances for Word. Reconstitute for the length of the larger array
+												if ($SIPRecL1.Count -ge $SIPRecR1.Count)
 												{
-													$SIPSgL1 += 'SIP Mode'
-													$SIPSgL2 += 'Basic Call'
-													$SIPSgL1 += 'Agent Type'
-													if ($SIPgroup.IE.AgentType -eq $null)
+													$arrayCount = $SIPRecL1.Count
+												}
+												else
+												{
+													$arrayCount = $SIPRecR1.Count
+												}
+												for ($i = 0; $i -lt $arrayCount; $i++)
+												{
+													if (($SIPRecL1[$i] -eq ''   ) -and ($SIPRecL2[$i] -eq ''   ) -and ($SIPRecR1[$i] -eq ''   ) -and ($SIPRecR2[$i] -eq ''   )) {continue} #No point writing a totally blank row!
+													if (($SIPRecL1[$i] -eq $null) -and ($SIPRecL2[$i] -eq $null) -and ($SIPRecR1[$i] -eq $null) -and ($SIPRecR2[$i] -eq $null)) {continue} #No point writing a totally blank row!
+													$SIPRecTable += ,($SIPRecL1[$i], $SIPRecL2[$i], $SIPRecR1[$i], $SIPRecR2[$i])
+												}
+												$SIPRecTable += ,('SPAN-L','Listen Ports', 'SPAN-R', 'Federated IP/FQDN')
+												#Build the rows here - Listen Ports first
+												$SIPListenList = ''
+												for ($i = 1; $i -le 6; $i++)
+												{
+													if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
 													{
-														$SIPSgL2 += '<n/a this rls>'
+															$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+													}
+												}
+												$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+												$SIPRecTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												$SIPRecTable += ,('SPAN', 'Message Manipulation', '', '')
+												#Are we doing message manipulation?
+												if ($SIPgroup.IE.IngressSPRMessageTableList -eq $null)
+												{
+													$SIPRecTable += ,('Message Manipulation', '<n/a this rls>', '', '')
+												}
+												else
+												{
+													if (($SIPgroup.IE.IngressSPRMessageTableList -eq '') -and ($SIPgroup.IE.EgressSPRMessageTableList -eq ''))
+													{
+														$SIPRecTable += ,('Message Manipulation', 'Disabled', '', '')
 													}
 													else
 													{
-														switch ($SIPgroup.IE.AgentType)
+														$SIPInboundMsgTrnList = ''
+														$SIPOutboundMsgTrnList = ''
+														if ($SIPgroup.IE.IngressSPRMessageTableList -ne $null)
 														{
-															'0'
+															$InboundMsgList = ($SIPgroup.IE.IngressSPRMessageTableList).Split(',')
+															foreach ($InboundMsgListEntry in $InboundMsgList)
 															{
-																$SIPSgL2 += 'Back-to-Back User Agent'
-																if ($SWeLite)
-																{
-																	# We don't show Interop Mode for B2B-AU
-																}
-																else
-																{
-																	$SIPSgL1 += 'Interop Mode'
-																	if ($SIPgroup.IE.InteropMode -eq $null)
-																	{
-																		$SIPSgL2 += '<n/a this rls>'
-																	}
-																	else
-																	{
-																		switch ($SIPgroup.IE.InteropMode)
-																		{
-																			'0'
-																			{
-																				$SIPSgL2 += 'Standard'
-																			}
-																			'2'
-																			{
-																				$SIPSgL2 += 'Office 365'
-																				$SIPSgL1 += 'Office365 User Domain Suffix'
-																				$SIPSgL2 += $SIPgroup.IE.Office365FQDN
-																			}
-																			'3'
-																			{
-																				$SIPSgL2 += 'Office 365 w/AD PBX'
-																				$SIPSgL1 += 'AD Attribute'
-																				$SIPSgL2 += $SIPgroup.IE.ADAttribute
-																				$SIPSgL1 += 'AD Update Frequency'
-																				$SIPSgL2 += $SIPgroup.IE.ADUpdateFrequency + ' [1..30] days'
-																				$SIPSgL1 += 'AD First Update Time'
-																				$SIPSgL2 += $SIPgroup.IE.ADFirstUpdateTime + ' [hh:mm:ss]'
-																				$SIPSgL1 += 'Office365 User Domain Suffix'
-																				$SIPSgL2 += $SIPgroup.IE.Office365FQDN
-																			}
-																			default
-																			{
-																				$SIPSgL2 += '<Unhandled Value>'
-																			}
-																		}
-																	}
-																}
+																$SIPInboundMsgTrnList += $SIPMessageRuleLookup.Get_Item($InboundMsgListEntry)
+																$SIPInboundMsgTrnList += "`n"
 															}
-															'1'
-															{
-																$SIPSgL2 += 'Access Mode'
-																$SIPSgL1 += 'Interop Mode'
-																$SIPSgL2 += Test-ForNull -LookupTable $SipSgInteropModeLookup -value $SIPgroup.IE.InteropMode
-																$SIPSgL1 += 'Registrant TTL'
-																$SIPSgL2 += $SIPgroup.IE.RegistrantTTL
-															}
-															default { $SIPSgL2 += '<Unhandled Value>' }
+															$SIPInboundMsgTrnList = Strip-TrailingCR -DelimitedString $SIPInboundMsgTrnList
 														}
-													}
-													$SIPSgL1 += 'SIP Server Table'
-													$SIPSgL2 += $SIPServerTablesLookup.Get_Item($SIPgroup.IE.ServerClusterID)
-												}
-												'1' # 'Fwd Reg after local processing'
-												{
-													$SIPSgL1 += 'SIP Mode'
-													$SIPSgL2 += 'Fwd Reg. After Local Processing'
-													$SIPSgL1 += 'Registrar'
-													$SIPSgL2 += $SIPRegistrarsLookup.Get_Item($SIPgroup.IE.RegistrarID)
-													$SIPSgL1 += 'Registrar Min TTL'
-													$SIPSgL2 += $SIPgroup.IE.RegistrarTTL
-													$SIPSgL1 += 'Outbound Registrant TTL'
-													$SIPSgL2 += $SIPgroup.IE.OutboundRegistrarTTL
-													$SIPSgL1 += 'SIP Server Table'
-													$SIPSgL2 += $SIPServerTablesLookup.Get_Item($SIPgroup.IE.ServerClusterID)
-												}
-												'2' # 'Local Registrar'
-												{
-													$SIPSgL1 += 'SIP Mode'
-													$SIPSgL2 += 'Local Registrar'
-													$SIPSgL1 += 'Registrar'
-													$SIPSgL2 += $SIPRegistrarsLookup.Get_Item($SIPgroup.IE.RegistrarID)
-													$SIPSgL1 += 'Agent Type'
-													if ($SIPgroup.IE.AgentType -eq $null)
-													{
-														$SIPSgL2 += '<n/a this rls>'
-													}
-													else
-													{
-														switch ($SIPgroup.IE.AgentType)
+														if ($SIPgroup.IE.EgressSPRMessageTableList -ne $null)
 														{
-															'0'
+															$OutboundMsgList = ($SIPgroup.IE.EgressSPRMessageTableList).Split(',')
+															foreach ($OutboundMsgListEntry in $OutboundMsgList)
 															{
-																$SIPSgL2 += 'Back-to-Back User Agent'
+																$SIPOutboundMsgTrnList += $SIPMessageRuleLookup.Get_Item($OutboundMsgListEntry)
+																$SIPOutboundMsgTrnList += "`n"
 															}
-															'1'
-															{
-																$SIPSgL2 += 'Access Mode'
-																$SIPSgL1 += 'Interop Mode'
-																$SIPSgL2 += Test-ForNull -LookupTable $SipSgInteropModeLookup -value $SIPgroup.IE.InteropMode
-															}
-															default
-															{
-																$SIPSgL2 += '<Unhandled Value>'
-															}
+															$SIPOutboundMsgTrnList = Strip-TrailingCR -DelimitedString $SIPOutboundMsgTrnList
 														}
-													}
-													$SIPSgL1 += 'Registrar Min TTL'
-													$SIPSgL2 += Test-ForNull -LookupTable $null -value $SIPgroup.IE.RegistrarTTL
-												}
-											}
-											$SIPSgL1 += 'Load Balancing'
-											$SIPSgL2 += $SipLoadBalancingLookup.Get_Item($SIPgroup.IE.ServerSelection)
-											$SIPSgL1 += 'Channel Hunting'
-											$SIPSgL2 += $SgHuntMethodLookup.Get_Item($SIPgroup.IE.HuntMethod)
-											$SIPSgL1 += 'Notify Lync CAC Profile'
-											$SIPSgL2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.NotifyCACProfile
-											if (($SIPgroup.IE.Monitor -eq '2') -and ($SIPgroup.IE.AgentType -eq '1'))
-											{
-												#'Challenge request' is hidden if (in Rls 4+) SIP Mode = 'Local Registrar' and Agent Type = 'Access Mode'
-											}
-											else
-											{
-												if ($SIPgroup.IE.ChallengeRequest -eq '0')
-												{
-													$SIPSgL1 += 'Challenge Request'
-													$SIPSgL2 += 'Disable'
-												}
-												else
-												{
-													$SIPSgL1 += 'Challenge Request'
-													$SIPSgL2 += 'Enable'
-													$SIPSgL1 += 'Authorization Realm'
-													$SIPSgL2 += $SIPgroup.IE.AuthorizationRealm
-													$SIPSgL1 += 'Local/Pass-thru Auth Table'
-													$SIPSgL2 += $SIPAuthorisationTableLookup.Get_Item($SIPgroup.IE.ProxyAuthorizationTableID)
-													$SIPSgL1 += 'Nonce Expiry'
-													if ($SIPgroup.IE.NonceLifetime -eq 0)
-													{
-														$SIPSgL2 += 'Forever'
-													}
-													else
-													{
-														$SIPSgL2 += 'Limited'
-														$SIPSgL1 += 'Nonce Lifetime'
-														$SIPSgL2 += $SIPgroup.IE.NonceLifetime
+														$SIPRecTable += ,('Message Manipulation', 'Enabled', '', '')
+														$SIPRecTable += ,('SPAN-L', 'Inbound Message Table List', 'SPAN-R', 'Outbound Message Table List')
+														$SIPRecTable += ,('Inbound Message Table List', $SIPInboundMsgTrnList, 'Outbound Message Table List', $SIPOutboundMsgTrnList)
 													}
 												}
+												$AllSIPRecData += ,('SIP Recording', $SIPgroupDescription, '', $SIPRecTable)
 											}
-											$SIPSgL1 += 'Outbound Proxy IP/FQDN'
-											$SIPSgL2 += $SIPgroup.IE.OutboundProxy
-											if (($SIPgroup.IE.ProxyIpVersion -eq $null) -or ($SIPgroup.IE.OutboundProxy -eq ''))
-											{
-												# Don't show 'Proxy IP Version'
-											}
-											else
-											{
-												try
-												{
-													if ([ipaddress]$SIPgroup.IE.OutboundProxy) {}
-													# It's an IP address: Don't show 'Proxy IP Version'
-												}
-												catch
-												{
-													#It's not a valid IP, or it's a hostname
-													$SIPSgL1 += 'Proxy IP Version'
-													$SIPSgL2 += Test-ForNull -LookupTable $IpVersionLookup -value $SIPgroup.IE.ProxyIpVersion
-												}
-											}
-											$SIPSgL1 += 'Outbound Proxy Port'
-											if ($SIPgroup.IE.OutboundProxyPort -eq '0')
-											{
-												$SIPSgL2 += ''
-											}
-											else
-											{
-												$SIPSgL2 += ($SIPgroup.IE.OutboundProxyPort + ' [1024..65535]')
-											}
-											if ($SWeLite)
-											{
-												#Doesn't show
-											}
-											else
-											{
-												$SIPSgL1 += 'No Channel Available Override'
-												$SIPSgL2 += Test-ForNull -LookupTable $Q850DescriptionLookup -value $SIPgroup.IE.NoChannelAvailableId
-											}
-											$SIPSgL1 += 'Call Setup Response Timer'
-											if ($SIPgroup.IE.TimerSanitySetup -eq $null)
-											{
-												$SIPSgL2 += '<n/a this rls>'
-											}
-											else
-											{
-												$SIPSgL2 += (($SIPgroup.IE.TimerSanitySetup / 1000).ToString() + ' [180..750] secs')
-											}
-											$SIPSgL1 += 'Call Proceeding Timer'
-											if ($SIPgroup.IE.TimerCallProceeding -eq $null)
-											{
-												$SIPSgL2 += '<n/a this rls>'
-											}
-											else
-											{
-												$SIPSgL2 += (($SIPgroup.IE.TimerCallProceeding / 1000).ToString() + ' [24..750] secs')
-											}
-											if ($SWeLite)
-											{
-												# QoE Reporting does not show
-											}
-											else
-											{
-												$SIPSgL1 += 'QoE Reporting'
-												$SIPSgL2 += Test-ForNull -LookupTable $EnabledLookup -value $SIPgroup.IE.QoEReporting
-											}
-											#v5.0: SYM-19541 RegisterKeepAlive in SIP Signaling Group should be displayed only if AgentType=B2BUA
-											# We also need to have SIP Mode either 'Basic Call' or 'Forward Reg' (i.e. not 'Local Registrar')
-											if (($SIPgroup.IE.AgentType -eq '0') -and ($SIPgroup.IE.Monitor -ne '2'))
-											{
-												$SIPSgL1 += 'Use Register as Keep Alive'
-												$SIPSgL2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.RegisterKeepAlive
-											}
-											$SIPSgL1 += 'Forked Call Answered Too Soon'
-											if ($SIPgroup.IE.RelOnQckConnect -eq $null)
-											{
-												$SIPSgL2 += '<n/a this rls>'
-											}
-											else
-											{
-												if ($SIPgroup.IE.RelOnQckConnect -eq '0')
-												{
-													$SIPSgL2 += 'Disable'
-												}
-												else
-												{
-													$SIPSgL2 += 'Enable'
-													$SIPSgL1 += 'Answer Too Soon Timer'
-													$SIPSgL2 += (($SIPgroup.IE.RelOnQckConnectTimer).ToString() + ' [1..5000] ms')
-												}
-											}
-											#RH:
-											if ($SIPgroup.IE.RTPDirectMode -ne $null)
-											{
-												# From v5.0 (and with the arrival of RTPDirectMode) the display changes:
-												$AudioFaxStreamMode = ''
-												if ($SWeLite)
-												{
-													$SIPSgR1 += 'Supported Audio Modes'
-												}
-												else
-												{
-													$SIPSgR1 += 'Supported Audio/Fax Modes'
-												}
-												if ($SIPgroup.IE.RTPMode -eq '1') { $AudioFaxStreamMode += "DSP`n" }
-												if ($SIPgroup.IE.RTPProxyMode  -eq '1') { $AudioFaxStreamMode += "Proxy`n" }
-												if ($SIPgroup.IE.RTPDirectMode -eq '1') { $AudioFaxStreamMode += "Direct`n" }
-												if ($SWeLite)
-												{
-													if ($SIPgroup.IE.RTPProxySrtpMode -eq '1') { $AudioFaxStreamMode += "Proxy with Local SRTP`n" }
-												}
-												$SIPSgR2 += Strip-TrailingCR -DelimitedString $AudioFaxStreamMode
-											}
-											else
-											{
-												# Pre-v5.0 layout:
-												$SIPSgR1 += 'Audio/Fax Stream Proxy Mode'
-												$SIPSgR2 += Test-ForNull -LookupTable $EnabledLookup -value $SIPgroup.IE.RTPProxyMode
-												$SIPSgR1 += 'Audio/Fax Stream DSP Mode'
-												$SIPSgR2 += Test-ForNull -LookupTable $EnabledLookup -value $SIPgroup.IE.RTPMode
-											}
-											$SIPSgR1 += 'Supported Video/Application Modes'
-											if ($SWeLite)
-											{
-												$SIPSgR2 += 'Disabled'
-											}
-											else
-											{
-												if ($LicencedForVideo -eq $null)
-												{
-													# This will be null if we're reading from an XML as there's no licencing info available
-													$SIPSgR2 += '<Unknown>'
-												}
-												else
-												{
-													if ($LicencedForVideo)
-													{
-														$VideoStreamMode = ''
-														if ($SIPgroup.IE.VideoProxyMode  -eq '1') { $VideoStreamMode += "Proxy`n"  }
-														if ($SIPgroup.IE.VideoDirectMode -eq '1') { $VideoStreamMode += "Direct`n" }
-														if ($VideoStreamMode -eq '') { $VideoStreamMode = "[None]" }
-														$SIPSgR2 += Strip-TrailingCR -DelimitedString $VideoStreamMode
-													}
-													else
-													{
-														$SIPSgR2 += 'Disabled'
-													}
-												}
-											}
-											if (($SIPgroup.IE.RTPMode -eq $null) -or ($SIPgroup.IE.RTPMode -eq '1'))
-											{
-												#If RTP DSP Mode is Disabled, hide all of these values (Part 1):
-												$SIPSgR1 += 'Media List ID'
-												$SIPSgR2 += $MediaListProfileLookup.Get_Item($SIPgroup.IE.MediaConfigID)
-											}
-											if ($SWeLite -and $SIPgroup.IE.RTPProxySrtpMode -eq '1')
-											{
-												$SIPSgR1 += 'Proxy Local SRTP Crypto Profile ID'
-												$SIPSgR2 += $SDESMediaCryptoProfileLookup.Get_Item($SIPgroup.IE.CryptoProfileID)
-											}
-											if (($SIPgroup.IE.RTPMode -eq $null) -or ($SIPgroup.IE.RTPMode -eq '1'))
-											{
-												$SIPSgR1 += 'Play Ringback'
-												$SIPSgR2 += $SipRingbackLookup.Get_Item($SIPgroup.IE.RingBack)
-												if ($SIPgroup.IE.RingBack -ne 2)
-												{
-													$SIPSgR1 += 'Tone Table'
-													$SIPSgR2 += $ToneTableLookup.Get_Item($SIPgroup.IE.ToneTableID)
-												}
-												$SIPSgR1 += 'Play Congestion Tone'
-												$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.PlayCongestionTone
-												$SIPSgR1 += 'Early 183'
-												$SIPSgR2 += $EnableLookup.Get_Item($SIPgroup.IE.Early183)
-											}
-											elseif ($SWeLite)
-											{
-												#So as at v7.0, if you DON'T have 'DSP' as a media type, the Lite still gives you a Tone Table option:
-												$SIPSgR1 += 'Tone Table'
-												$SIPSgR2 += $ToneTableLookup.Get_Item($SIPgroup.IE.ToneTableID)
-											}
-											# But everyone gets 'Allow Refresh DSP':
-											$SIPSgR1 += 'Allow Refresh SDP'
-											$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.AllowRefreshSDP
-											if (($SIPgroup.IE.RTPMode -eq $null) -or ($SIPgroup.IE.RTPMode -eq '1'))
-											{
-												#If RTP DSP Mode is Disabled, hide all of these values (Part 2):
-												$SIPSgR1 += 'Music On Hold'
-												$SIPSgR2 += Test-ForNull -LookupTable $SipSgMOHLookup -value $SIPgroup.IE.SGLevelMOHService
-											}
-											$SIPSgR1 += 'RTCP Multiplexing'
-											$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.RTCPMultiplexing
-											$SIPSgR1 += 'SPAN-R'
-											$SIPSgR2 += 'Mapping Tables'
-											$SIPSgR1 += 'SIP to Q.850 Override Table'
-											$SIPSgR2 += $SIPToQ850TableLookup.Get_Item($SIPgroup.IE.SIPtoQ850_TableID)
-											$SIPSgR1 += 'Q.850 to SIP Override Table'
-											$SIPSgR2 += $Q850ToSIPTableLookup.Get_Item($SIPgroup.IE.Q850toSIP_TableID)
-											$SIPSgR1 += 'Pass-thru Peer SIP Response Code'
-											$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.PassthruPeerSIPRespCode
-											if ($SIPgroup.IE.ServerSelection -eq '4')
-											{
-												$SIPSgR1 += 'SIP Failover Cause Codes'
-												$SipSgResponseCodes = $null
-												$SipResponseCodesList = ($SIPgroup.IE.SipResponseCodes).Split(',') #Value in the file is formatted as '0,2'
-												foreach ($SipResponseCode in $SipResponseCodesList)
-												{
-													$SipSgResponseCodes += ($SIPDescriptionLookup.Get_Item($SipResponseCode) + "`n")
-												}
-												$SIPSgR2 += Strip-TrailingCR -DelimitedString $SipSgResponseCodes
-											}
-											$SIPSgR1 += 'SPAN-R'
-											$SIPSgR2 += 'SIP IP Details'
-											$SIPSgR1 += 'Teams Local Media Optimization'
-											$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.MediaOptimization
-											if ($SIPgroup.IE.NATTraversalType -eq '0') #Outbound NAT
-											{
-												$SIPSgR1 += 'Signaling/Media Source IP'
-												$SIPSgR2 += $PortToIPAddressLookup.Get_Item($SIPgroup.IE.NetInterfaceSignaling)
-											}
-											else
-											{
-												$SIPSgR1 += 'Signaling/Media Private IP'
-												$SIPSgR2 += $PortToIPAddressLookup.Get_Item($SIPgroup.IE.NetInterfaceSignaling)
-											}
-											if ($SIPgroup.IE.MediaOptimization -eq '1')
-											{
-												$SIPSgR1 += 'Private Media Source IP'
-												$SIPSgR2 += $PortToIPAddressLookup.Get_Item($SIPgroup.IE.PrivateMediaSourceIp)
-											}
-											$SIPSgR1 += 'Signaling DSCP'
-											$SIPSgR2 += Test-ForNull -LookupTable $null -value $SIPgroup.IE.DSCP
-											if (($SIPgroup.IE.Monitor -eq '3') -and ($SIPgroup.IE.AgentType -eq '0'))
-											{
-												# "If SIP Mode = Basic Call & Agent Type = B2BUA"
-												$SIPSgR1 += 'SPAN-R'
-												$SIPSgR2 += 'NAT Traversal'
-												$SIPSgR1 += 'ICE Support'
-												$SIPSgR2 += Test-ForNull -LookupTable $EnabledLookup -value $SIPgroup.IE.ICESupport
-												if ($SIPgroup.IE.ICESupport -eq '1')
-												{
-													$SIPSgR1 += 'ICE Mode'
-													$SIPSgR2 += Test-ForNull -LookupTable $ICEModeLookup -value $SIPgroup.IE.ICEMode
-												}
-											}
-											$SIPSgR1 += 'SPAN-R'
-											$SIPSgR2 += 'Static NAT - Outbound'
-											if ($SIPgroup.IE.NATTraversalType -eq '0')
-											{
-												$SIPSgR1 += 'Outbound NAT Traversal'
-												$SIPSgR2 += 'None'
-											}
-											else
-											{
-												$SIPSgR1 += 'Outbound NAT Traversal'
-												$SIPSgR2 += 'Static NAT'
-												$SIPSgR1 += 'NAT Public IP (Signaling/Media)'
-												$SIPSgR2 += $SIPgroup.IE.NATPublicIPAddress
-											}
-											$SIPSgR1 += 'SPAN-R'
-											$SIPSgR2 += 'Static NAT - Inbound'
-											$SIPSgR1 += 'Detection'
-											if ($SIPgroup.IE.InboundNATTraversalDetection -eq $null)
-											{
-												$SIPSgR2 += '<n/a this rls>'
-											}
-											else
-											{
-												if ($SIPgroup.IE.InboundNATTraversalDetection -eq '0')
-												{
-													$SIPSgR2 += 'Disabled'
-												}
-												else
-												{
-													$SIPSgR2 += 'Enabled'
-													$SIPSgR1 += 'Qualified Prefixes Table'
-													$SIPSgR2 += $SIPNATPrefixesLookup.Get_Item($SIPgroup.IE.InboundNATQualifiedPrefixesTableID)
-													$SIPSgR1 += 'Secure Media Latching'
-													if ($SIPgroup.IE.InboundSecureNATMediaLatching -eq '0')
-													{
-														$SIPSgR2 += 'Disabled'
-													}
-													else
-													{
-														$SIPSgR2 += 'Enabled'
-														$SIPSgR1 += 'Secure Media Netmask'
-														$SIPSgR2 += $SIPgroup.IE.InboundSecureNATMediaPrefix
-													}
-													$SIPSgR1 += 'Registrar Max. TTL Enabled'
-													if ($SIPgroup.IE.InboundNATPeerRegistrarMaxEnabled -eq '0')
-													{
-														$SIPSgR2 += 'No'
-													}
-													else
-													{
-														$SIPSgR2 += 'Yes'
-														$SIPSgR1 += 'Registrar Max. TTL'
-														$SIPSgR2 += ($SIPgroup.IE.InboundNATPeerRegistrarMaxTTL + ' [30..86400] secs')
-													}
-												}
-											}
-											#Reassemble the above back into the correct column appearances for Word. Reconstitute for the length of the larger array
-											if ($SIPSgL1.Count -ge $SIPSgR1.Count)
-											{
-												$arrayCount = $SIPSgL1.Count
-											}
-											else
-											{
-												$arrayCount = $SIPSgR1.Count
-											}
-											for ($i = 0; $i -lt $arrayCount; $i++)
-											{
-												if (($SIPSgL1[$i] -eq ''   ) -and ($SIPSgL2[$i] -eq ''   ) -and ($SIPSgR1[$i] -eq ''   ) -and ($SIPSgR2[$i] -eq ''   )) {continue} #No point writing a totally blank row!
-												if (($SIPSgL1[$i] -eq $null) -and ($SIPSgL2[$i] -eq $null) -and ($SIPSgR1[$i] -eq $null) -and ($SIPSgR2[$i] -eq $null)) {continue} #No point writing a totally blank row!
-												$SipSGTable += ,($SIPSgL1[$i], $SIPSgL2[$i], $SIPSgR1[$i], $SIPSgR2[$i])
-											}
-											$SipSGTable += ,('SPAN-L','Listen Ports', 'SPAN-R', 'Federated IP/FQDN')
-											#Build the rows here - Listen Ports first
-											$SIPListenList = ''
-											for ($i = 1; $i -le 6; $i++)
-											{
-												if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
-												{
-														$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
-												}
-											}
-											$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
-											$SipSGTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
-											$SipSGTable += ,('SPAN', 'Message Manipulation', '', '')
-											#Are we doing message manipulation?
-											if ($SIPgroup.IE.IngressSPRMessageTableList -eq $null)
-											{
-												$SipSGTable += ,('Message Manipulation', '<n/a this rls>', '', '')
-											}
-											else
-											{
-												if (($SIPgroup.IE.IngressSPRMessageTableList -eq '') -and ($SIPgroup.IE.EgressSPRMessageTableList -eq ''))
-												{
-													$SipSGTable += ,('Message Manipulation', 'Disabled', '', '')
-												}
-												else
-												{
-													$SIPInboundMsgTrnList = ''
-													$SIPOutboundMsgTrnList = ''
-													if ($SIPgroup.IE.IngressSPRMessageTableList -ne $null)
-													{
-														$InboundMsgList = ($SIPgroup.IE.IngressSPRMessageTableList).Split(',')
-														foreach ($InboundMsgListEntry in $InboundMsgList)
-														{
-															$SIPInboundMsgTrnList += $SIPMessageRuleLookup.Get_Item($InboundMsgListEntry)
-															$SIPInboundMsgTrnList += "`n"
-														}
-														$SIPInboundMsgTrnList = Strip-TrailingCR -DelimitedString $SIPInboundMsgTrnList
-													}
-													if ($SIPgroup.IE.EgressSPRMessageTableList -ne $null)
-													{
-														$OutboundMsgList = ($SIPgroup.IE.EgressSPRMessageTableList).Split(',')
-														foreach ($OutboundMsgListEntry in $OutboundMsgList)
-														{
-															$SIPOutboundMsgTrnList += $SIPMessageRuleLookup.Get_Item($OutboundMsgListEntry)
-															$SIPOutboundMsgTrnList += "`n"
-														}
-														$SIPOutboundMsgTrnList = Strip-TrailingCR -DelimitedString $SIPOutboundMsgTrnList
-													}
-													$SipSGTable += ,('Message Manipulation', 'Enabled', '', '')
-													$SipSGTable += ,('SPAN-L', 'Inbound Message Table List', 'SPAN-R', 'Outbound Message Table List')
-													$SipSGTable += ,('Inbound Message Table List', $SIPInboundMsgTrnList, 'Outbound Message Table List', $SIPOutboundMsgTrnList)
-												}
-											}
-											$SGData += , ('SIP', ('(SIP) {0}' -f ($SIPgroupDescription)), '', $SipSGTable)
 										}
 									}
 								}
@@ -6030,7 +6138,6 @@ begin
 											{
 												$CasSGTable = @() #null the collection for each table
 												$CASgroupDescription = Fix-NullDescription -TableDescription $CASgroup.IE.Description -TableValue $CASgroup.value -TablePrefix 'SG #'
-												$SgTableLookup.Add($CASgroup.value, '(CAS) ' + $CASgroupDescription)
 												#The Profile names are stored in separate elements, but as they're all mutually exclusive I want to combine them in one column in the table:
 												if ($CASgroup.IE.CasLoopStartFxsProfileId -ne '0')
 												{
@@ -6055,6 +6162,14 @@ begin
 												$CasSGTable += ,('SPAN', 'CAS Signaling Group', '' , '')
 												$CasSGTable += ,('Description', $CASgroupDescription, '' , '')
 												$CasSGTable += ,('Line Type', $CASSgLineTypeLookup.Get_Item($CASgroup.IE.CasLineType), '' , '')
+												if ($CASgroup.IE.customAdminState -eq $null)
+												{
+													$CasSGTable += ,('Admin State', $EnabledLookup.Get_Item($CASgroup.IE.Enabled), '', '')
+												}
+												else
+												{
+													$CasSGTable += ,('Admin State', $EnabledLookup.Get_Item($CASgroup.IE.customAdminState), '', '')
+												}
 												$CasSGTable += ,('Admin State', $EnabledLookup.Get_Item($CASgroup.IE.Enabled), '', '')
 												$CasSGTable += ,('SPAN-L', 'Channels and Routing', 'SPAN-R', 'CAS Protocol')
 												#Now prepare the table, building the L & R columns as independent arrays, then consolidating them together ready for Word.
@@ -6307,7 +6422,7 @@ begin
 													}
 												}
 											}
-											$SGData += , ('CAS', ('(CAS) {0}' -f ($CASgroupDescription)), '', $CasSGTable)
+											$SGData += , ('CAS', $CASgroupDescription, '', $CasSGTable)
 										}
 									}
 								}
@@ -7807,98 +7922,102 @@ begin
 														$SipServerTable += ,($SSTableL1[$i], $SSTableL2[$i], $SSTableR1[$i], $SSTableR2[$i])
 													}
 													#Go again for the lower half of the table:
-													$SSTableL1 = @()
-													$SSTableL2 = @()
-													$SSTableR1 = @()
-													$SSTableR2 = @()
-													#LH:
-													$SSTableL1 += 'SPAN-L'
-													$SSTableL2 += 'Remote Authorization and Contacts'
-													$SSTableL1 += 'Remote Authorization Table'
-													$SSTableL2 += $SipCredentialsTableLookup.Get_Item($SIPServer.IE.RemoteAuthorizationTableID)
-													if ($SIPServer.IE.ContactRegistrantTableID -eq '0')
+													# *Skip* if v9.0.0+ and this is a SIP Recorder (SipServerType = 1)
+													if (($SIPServer.IE.SipServerType -ne $null) -and ($SIPServer.IE.SipServerType -eq 1))
 													{
-														$SSTableL1 += 'Contact Registrant Table'
-														$SSTableL2 += 'None'
-													}
-													else
-													{
-														$SSTableL1 += 'Contact Registrant Table'
-														$SSTableL2 += $SipRegistrationTableLookup.Get_Item($SIPServer.IE.ContactRegistrantTableID)
-														$SSTableL1 += 'Clear Remote Registration on Startup'
-														$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.ClearRemoteRegistrationOnStartup
-														$SSTableL1 += 'Contact URI Randomizer'
-														$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.ContactURIRandomizer
-														$SSTableL1 += 'Stagger Registration'
-														$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.StaggerRegistration
-													}
-													if ($SIPServer.IE.RemoteAuthorizationTableID -ne '0')
-													{
-														#Only displays (in 4.1+ ?) if we have a Remote Auth Table set
-														$SSTableL1 += 'Retry Non-Stale Nonce'
-														$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.RetryNonStaleNonce
-														$SSTableL1 +=  'Authorization on Refresh'
-														$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.AuthorizationOnRefresh
-													}
-													$SSTableL1 += 'Session URI Validation'
-													if ($SIPServer.IE.SessionURIValidation -eq $null)
-													{
-														$SSTableL2 += '<n/a this rls>'
-													}
-													else
-													{
-														if ($SIPServer.IE.SessionURIValidation -eq '1')
+														$SSTableL1 = @()
+														$SSTableL2 = @()
+														$SSTableR1 = @()
+														$SSTableR2 = @()
+														#LH:
+														$SSTableL1 += 'SPAN-L'
+														$SSTableL2 += 'Remote Authorization and Contacts'
+														$SSTableL1 += 'Remote Authorization Table'
+														$SSTableL2 += $SipCredentialsTableLookup.Get_Item($SIPServer.IE.RemoteAuthorizationTableID)
+														if ($SIPServer.IE.ContactRegistrantTableID -eq '0')
 														{
-															$SSTableL2 += 'Strict'
+															$SSTableL1 += 'Contact Registrant Table'
+															$SSTableL2 += 'None'
 														}
 														else
 														{
-															$SSTableL2 += 'Liberal'
+															$SSTableL1 += 'Contact Registrant Table'
+															$SSTableL2 += $SipRegistrationTableLookup.Get_Item($SIPServer.IE.ContactRegistrantTableID)
+															$SSTableL1 += 'Clear Remote Registration on Startup'
+															$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.ClearRemoteRegistrationOnStartup
+															$SSTableL1 += 'Contact URI Randomizer'
+															$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.ContactURIRandomizer
+															$SSTableL1 += 'Stagger Registration'
+															$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.StaggerRegistration
 														}
-													}
-													#RH:
-													if ($SIPServer.IE.Protocol -ne '1') #(Do for everything *except* UDP)
-													{
-														$SSTableR1 += 'SPAN-R'
-														$SSTableR2 += 'Connection Reuse'
-														$SSTableR1 += 'Reuse'
-														if ($SIPServer.IE.ReuseTransport -eq '0')
+														if ($SIPServer.IE.RemoteAuthorizationTableID -ne '0')
 														{
-															$SSTableR2 += 'False'
+															#Only displays (in 4.1+ ?) if we have a Remote Auth Table set
+															$SSTableL1 += 'Retry Non-Stale Nonce'
+															$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.RetryNonStaleNonce
+															$SSTableL1 +=  'Authorization on Refresh'
+															$SSTableL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPServer.IE.AuthorizationOnRefresh
+														}
+														$SSTableL1 += 'Session URI Validation'
+														if ($SIPServer.IE.SessionURIValidation -eq $null)
+														{
+															$SSTableL2 += '<n/a this rls>'
 														}
 														else
 														{
-															$SSTableR2 += 'True'
-															$SSTableR1 += 'Sockets'
-															$SSTableR2 += $SIPServer.IE.TransportSocket
-															$SSTableR1 += 'Reuse Timeout'
-															if ($SIPServer.IE.ReuseTimeout -eq '0')
+															if ($SIPServer.IE.SessionURIValidation -eq '1')
 															{
-																$SSTableR2 += 'Forever'
+																$SSTableL2 += 'Strict'
 															}
 															else
 															{
-																$SSTableR2 += 'Limited'
-																$SSTableR1 += 'Timeout Limit'
-																$SSTableR2 += $SIPServer.IE.ReuseTimeout + ' mins'
+																$SSTableL2 += 'Liberal'
 															}
 														}
-													}
-													#Reassemble the above back into the correct column appearances for Word. Reconstitute for the length of the larger array
-													if ($SSTableL1.Count -ge $SSTableR1.Count)
-													{
-														$arrayCount = $SSTableL1.Count
-													}
-													else
-													{
-														$arrayCount = $SSTableR1.Count
-													}
-													for ($i = 0; $i -lt $arrayCount; $i++)
-													{
-														if (($SSTableL1[$i] -eq ''   ) -and ($SSTableL2[$i] -eq ''   ) -and ($SSTableR1[$i] -eq ''   ) -and ($SSTableR2[$i] -eq ''   )) {continue} #No point writing a totally blank row!
-														if (($SSTableL1[$i] -eq $null) -and ($SSTableL2[$i] -eq $null) -and ($SSTableR1[$i] -eq $null) -and ($SSTableR2[$i] -eq $null)) {continue} #No point writing a totally blank row!
-														$SipServerTable += ,($SSTableL1[$i], $SSTableL2[$i], $SSTableR1[$i], $SSTableR2[$i])
-													}
+														#RH:
+														if ($SIPServer.IE.Protocol -ne '1') #(Do for everything *except* UDP)
+														{
+															$SSTableR1 += 'SPAN-R'
+															$SSTableR2 += 'Connection Reuse'
+															$SSTableR1 += 'Reuse'
+															if ($SIPServer.IE.ReuseTransport -eq '0')
+															{
+																$SSTableR2 += 'False'
+															}
+															else
+															{
+																$SSTableR2 += 'True'
+																$SSTableR1 += 'Sockets'
+																$SSTableR2 += $SIPServer.IE.TransportSocket
+																$SSTableR1 += 'Reuse Timeout'
+																if ($SIPServer.IE.ReuseTimeout -eq '0')
+																{
+																	$SSTableR2 += 'Forever'
+																}
+																else
+																{
+																	$SSTableR2 += 'Limited'
+																	$SSTableR1 += 'Timeout Limit'
+																	$SSTableR2 += $SIPServer.IE.ReuseTimeout + ' mins'
+																}
+															}
+														}
+														#Reassemble the above back into the correct column appearances for Word. Reconstitute for the length of the larger array
+														if ($SSTableL1.Count -ge $SSTableR1.Count)
+														{
+															$arrayCount = $SSTableL1.Count
+														}
+														else
+														{
+															$arrayCount = $SSTableR1.Count
+														}
+														for ($i = 0; $i -lt $arrayCount; $i++)
+														{
+															if (($SSTableL1[$i] -eq ''   ) -and ($SSTableL2[$i] -eq ''   ) -and ($SSTableR1[$i] -eq ''   ) -and ($SSTableR2[$i] -eq ''   )) {continue} #No point writing a totally blank row!
+															if (($SSTableL1[$i] -eq $null) -and ($SSTableL2[$i] -eq $null) -and ($SSTableR1[$i] -eq $null) -and ($SSTableR2[$i] -eq $null)) {continue} #No point writing a totally blank row!
+															$SipServerTable += ,($SSTableL1[$i], $SSTableL2[$i], $SSTableR1[$i], $SSTableR2[$i])
+														}
+													} #End the lower half skip code added in v9.0.0 for SIP Recorders
 													#Add sufficient empty values into the array so that we can then poke the value in at the appropriate level
 													# (there might be only 3 values, but they might be entries 1, 2 & 5 after the user has deleted some)
 													while (($SIPServerTableList.Count -1) -lt $SIPServer.Value) { $SIPServerTableList += '' }
@@ -9309,6 +9428,46 @@ begin
 							#$SNMPData += , ('TCA Configuration', '', $TCAStatisticsColumnTitles, $TCAStatisticsCollection)
 						}
 					}
+					
+					#---------- Notification Service ------------------------
+					'NotificationService'
+					{
+						$NotificationGroups = $node.GetElementsByTagName('Token')
+						ForEach ($NotificationGroup in $NotificationGroups)
+						{
+							# ---- Notification Manager Config ----------
+							if ($NotificationGroup.name -eq 'NotificationManager')
+							{
+								$NotificationData = @()
+								$NotificationProfiles = $NotificationGroup.GetElementsByTagName('ID')
+								if ($NotificationProfiles.Count -ne 0)
+								{
+									ForEach ($NotificationProfile in $NotificationProfiles)
+									{
+										if ($NotificationProfile.IE.classname -eq $null) { continue } # Empty / deleted entry
+										if ($NotificationProfile.IE.classname -eq 'NOTIFICATION_MANAGER_IE')
+										{
+											$NotificationTable = @()
+											$NotificationTable += ,('SPAN-L', 'Notification Manager Table', '', '')
+											$NotificationDescription = (Fix-NullDescription -TableDescription $NotificationProfile.IE.Description -TableValue $NotificationProfile.value -TablePrefix 'Event #')
+											$NotificationTable += ,('Description', $NotificationDescription, '' , '')
+											$NotificationTable += ,('Admin State', (Test-ForNull -LookupTable $EnabledLookup -value $NotificationProfile.IE.customAdminState), '' , '')
+											$NotificationTable += ,('Service Provider', (Test-ForNull -LookupTable $NotificationProviderLookup -value $NotificationProfile.IE.ServiceProvider), '' , '')
+											$NotificationTable += ,('Caller ID', $NotificationProfile.IE.ProjectID, '' , '')
+											$NotificationTable += ,('Client ID', $NotificationProfile.IE.ClientID, '' , '')
+											$NotificationTable += ,('Secret', '****', '' , '')
+											$NotificationTable += ,('Monitoring Interval', ($NotificationProfile.IE.MonitoringInterval + ' hours'), '' , '')
+											$NotificationTable += ,('Events', (Test-ForNull -LookupTable $NotificationEventsLookup -value $NotificationProfile.IE.Events), '' , '')
+											$E911Recipients = [regex]::replace($NotificationProfile.IE.E911RecipientsList, ',' , "`n") # Write each recipient on a new line 
+											$NotificationTable += ,('E911 Recipients List', $E911Recipients, '' , '')
+											$NotificationTable += ,('E911 Message', $NotificationProfile.IE.E911Message, '' , '')
+										}
+										$EmergSvcsData += ,('Notification Manager', $NotificationDescription, '', $NotificationTable)
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 
@@ -9410,6 +9569,7 @@ begin
 			$AllSipData += $AllSipMsgRuleData
 			$AllSipData += $SIPCondRuleData
 			$AllSipData += $NodeLevelSIPData
+			$AllSipData += $AllSIPRecData
 
 			$AllCallRouting = @()
 			$AllCallRouting += $TransformationData
@@ -9430,19 +9590,20 @@ begin
 			{
 				if ($DoAll -or $DoIP)	 { $Sections += ,('Networking Interfaces', $NodeHardwareData ) }
 			}
-			if ($DoAll -or $DoSystem) { $Sections += ,('Application Solution Module', $SBAData ) }
-			if ($DoAll -or $DoSystem) { $Sections += ,('System', $SystemData) }
-			if ($DoAll -or $DoSystem) { $Sections += ,('Auth and Directory Services', $ADData) }
-			if ($DoAll -or $DoIP)	 { $Sections += ,('Protocols', $IPRouteData) }
-			if ($DoAll -or $DoSIP)	{ $Sections += ,('SIP', $AllSipData) }
-			if ($DoAll -or $DoSig)	{ $Sections += ,('CAS', $CASData) }
-			if ($DoAll -or $DoMisc)   { $Sections += ,('Security', $SecurityData) }
-			if ($DoAll -or $DoMisc)   { $Sections += ,('Media', $MediaData) }
-			if ($DoAll -or $DoMisc)   { $Sections += ,('Tone Tables', $ToneTableData) }
-			if ($DoAll -or $DoSig)	{ $Sections += ,('Telephony Mapping Tables', $TMTData) }
-			if ($DoAll -or $DoMaint)  { $Sections += ,('SNMP/Alarms', $SNMPData) }
-			if ($DoAll -or $DoMaint)  { $Sections += ,('Logging Configuration', $LoggingData) }
-			if ($DoAll -or $DoCalls)  { $Sections += ,('Emergency Services', $EmergSvcsData) }
+			if ($DoAll -or $DoSystem)	{ $Sections += ,('Application Solution Module', $SBAData ) }
+			if ($DoAll -or $DoSystem)	{ $Sections += ,('System', $SystemData) }
+			if ($DoAll -or $DoSystem)	{ $Sections += ,('Auth and Directory Services', $ADData) }
+			if ($DoAll -or $DoIP)		{ $Sections += ,('Protocols', $IPRouteData) }
+			if ($DoAll -or $DoSIP)		{ $Sections += ,('SIP', $AllSipData) }
+			if ($DoAll -or $DoSig)		{ $Sections += ,('CAS', $CASData) }
+			if ($DoAll -or $DoMisc)		{ $Sections += ,('Security', $SecurityData) }
+			if ($DoAll -or $DoMisc)		{ $Sections += ,('Media', $MediaData) }
+			if ($DoAll -or $DoMisc)		{ $Sections += ,('Tone Tables', $ToneTableData) }
+			if ($DoAll -or $DoSig)		{ $Sections += ,('Telephony Mapping Tables', $TMTData) }
+			if ($DoAll -or $DoMaint)	{ $Sections += ,('SNMP/Alarms', $SNMPData) }
+			if ($DoAll -or $DoMaint)	{ $Sections += ,('Logging Configuration', $LoggingData) }
+			if ($DoAll -or $DoCalls)	{ $Sections += ,('Emergency Services', $EmergSvcsData) }
+			#if ($DoAll -or $DoCalls)	{ $Sections += ,('Emergency Services', $NotificationData) }
 
 			$sectionCounter = 0
 			foreach ($section in $Sections)
@@ -9770,7 +9931,7 @@ process
 	$ACLv6TableLookup	= @{'0' = 'None'}			#The names of the IPv6 ACL tables		Referenced by: Ports / Logical Interfaces
 	#$TranslationTableLookup = @{}					#The names of the Translation Tables	Referenced by: Call Routes					- moved in v6.0 with 'FixNullAndDuplicateDescriptions'
 	#$TransformationTableLookup = @{'0' = 'None'}	#The names of the Transformation tables	Referenced by: Call Routes & Action Sets		- moved in v6.0 with 'FixNullAndDuplicateDescriptions'
-	$SgTableLookup = @{}							#The names of the Signaling Groups		Referenced by: Call Routes
+	$SgTableLookup = @{}							#The names of the Signaling Groups		Referenced by: Call Routes, & Signaling Groups (from v9.0.0+)
 	$CallRoutingTableLookup = @{}					#The names of the call routing tables	Referenced by: Action Config & Signaling Groups
 	$ActionSetLookup = @{'0' = 'None'} 				#The names of the Action Sets			Referenced by: Signaling Gps
 	$ActionSetConfigLookup = @{'0'='Continue'}		#The names of the Action Configs		Referenced by: Action Set Tables
@@ -9786,7 +9947,7 @@ process
 	$CertificateLookup = @{'-1000' = '--- No Tables ---';}		#The names of the Certificates	Referenced by: TLS Profiles
 	$SDESMediaCryptoProfileLookup = @{'0' = 'None';}	#The names of the SDES Crypto Profiles		 Referenced by: Media List Profiles
 	$DTLSMediaCryptoProfileLookup = @{'0' = 'None';}	#The names of the DTLS Crypto Profiles		 Referenced by: Media List Profiles
-	$SIPServerTablesLookup = @{'0' = 'None';}		#The names of the SIP server tables		Referenced by: SIP Signaling Gps & Node-Level SIP Settings
+	$SIPServerTablesLookup = @{'0' = 'None';}		#The names of the SIP server tables		Referenced by: SIP Signaling Gps, Node-Level SIP Settings & SIP Recording
 	$SIPRegistrarsLookup = @{}						#The names of the SIP registrars		Referenced by: SIP Signaling Gps
 	$VoiceFaxProfilesLookup = @{}					#The names of the Media Types			Referenced by: Media List Profiles
 	$MediaListProfileLookup = @{'0' = 'None';}		#The names of the Media List Profiles	Referenced by: SIP Signaling Gps & Call Routes
@@ -9875,8 +10036,8 @@ end
 # SIG # Begin signature block
 # MIIceAYJKoZIhvcNAQcCoIIcaTCCHGUCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUdW0+lqT8P7aRiJWM1CrxKYut
-# i3ygghenMIIFMDCCBBigAwIBAgIQA1GDBusaADXxu0naTkLwYTANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUdq+AVhw2/cA7wKM++9fC8LiM
+# eqKgghenMIIFMDCCBBigAwIBAgIQA1GDBusaADXxu0naTkLwYTANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTIwMDQxNzAwMDAwMFoXDTIxMDcw
@@ -10007,22 +10168,22 @@ end
 # BgNVBAMTKERpZ2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBDb2RlIFNpZ25pbmcgQ0EC
 # EANRgwbrGgA18btJ2k5C8GEwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFAJIKVNUcsWR1VY1I46Q
-# C/7NAfv6MA0GCSqGSIb3DQEBAQUABIIBAAb1urSe43tsd8QVx1e5j3pS5QBIDXbp
-# /Sb+QHFO6oakpwv6gtMuHSC8/SZjDukzq9Ah6wlcRF82KxfQhRcyf8qcMk0AClgz
-# WIIVol4pSHkpQEe6Xgdt+0ATcJulPuUhezA6fTib2N4FlU2LAicGZTIOnGWsyoiJ
-# wVnZrpit8Cx54Sa6UL604xNkcvBRmVUUqH+8OYtvtnUqQnvwrrxMEyekMIwOsBDk
-# ZCMGbzc0FGlpVte2it++29eX+zSGA5EcNwMoNFjOVzvngZlnOK9WegSYLmv2ChID
-# FDjRmS2+W08y/Fw/J4gCYEGy9sKrVflEKkAxtZlEls6coxAmM+T9n+uhggIPMIIC
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFGZOu/uew5iR0lpylgo6
+# X5wJnf+wMA0GCSqGSIb3DQEBAQUABIIBABta4pSghDnKDstqejTiKPsMEQQRC6is
+# Oka76h0q/WrED3ykaNw+RLTK38drjiQ9ZOYBXc4BhQIAOAT6UgIQcGiC17mStRyL
+# WU1/QH9z3N3wOq2b7y9cpZnzZAJWzTP2bd7NLNmcljZ4AG6JWXmyr7vaUZ1Qnxvj
+# b6u8r4dLupn27vDnYNWiGJtIjUimMQHeOUoOieOa5CKmq320vS2+4sqjfFNE8tMz
+# 9iBOeSsqjn7Jp3JFvnH01k7gLAiYM9bx+AXkm/69uDNm5M4k1Y/JrQGJ/1E+fm5x
+# Gu23uisqB7aaYo1UPecaPdbr9NHMfLMqpQHX9FPftfWBiGeAL4mRMaqhggIPMIIC
 # CwYJKoZIhvcNAQkGMYIB/DCCAfgCAQEwdjBiMQswCQYDVQQGEwJVUzEVMBMGA1UE
 # ChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYD
 # VQQDExhEaWdpQ2VydCBBc3N1cmVkIElEIENBLTECEAMBmgI6/1ixa9bV6uYX8GYw
 # CQYFKw4DAhoFAKBdMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcN
-# AQkFMQ8XDTIwMDgxNjAzMjU1M1owIwYJKoZIhvcNAQkEMRYEFI+/jw/LQN3wFgZ9
-# uNXRUi1GxMLDMA0GCSqGSIb3DQEBAQUABIIBAA2QVzuee3wJ6HhsuVJUqepiZmfM
-# 2vwLuOgmZ2JkU9M3Ga3fqkmIIlDnudskf+xa7zSvMwP/yea9ebgcbfJOmJoGYMFO
-# r58MAEgP5AtPyO/tyFAJ959XyrKuOO7Z6RKUbvSSw/IEMZ96FCSvbCoehPolXquB
-# uJRbiDsI/UL2SPkD7TV5o+0RMJOQSgpbtHPBWU40cXDB3Ouft4VLtuLikzD59dHn
-# tLBBlSkGANLhw3shkQq1hsGZP5TTXJUG/knKMs6lFw1tyvfu5Ecj/qFvMNmTL26j
-# nsBTtxVYwlUgzDMlkFAALzrN+EuJ6XjfWG2tL0QGFmYyo3QPimfcAs/lsxc=
+# AQkFMQ8XDTIwMTEwNzAyMzcyMFowIwYJKoZIhvcNAQkEMRYEFFSLg2saM3a2Bxvq
+# W67i+1lhKrngMA0GCSqGSIb3DQEBAQUABIIBAGnYgt0Z+fWgB0wU/aaHMLo2jdgc
+# fFpefAj7s0+r/Diw+Z8r9qluGm11yEIRpXlUljAVnfwadljWMUVl9TdDD3Ed3+co
+# jPeZ/y5eeaK/T3mkvU6FzqULJGz/nT/9X0wPhLxnFB79ZRE23YFQNOjkTyKtvmRu
+# 9TsbDCSJx0YYx5N4xVw6++UpZxorKr6zXYNJRQI2bbrOMSHzbpcV6gzpsZ22h3cF
+# pJ/EpXXB67GLH8e4gLy8TPjlmftxJ8aEfxK3D/uc34YGxhtDgIdkoJBiPlS5B/V8
+# aauAuFPLCyUtk5/eTVSwbeYgbMj6/JXVrLOqQEkELjOcQVAn1Se47L0DW3I=
 # SIG # End signature block
