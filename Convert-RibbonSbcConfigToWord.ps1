@@ -14,9 +14,9 @@
 	It will run with no command-line parameters and assumes default values for the source and destination files.
 
 .NOTES
-	Version				: 9.0.1
-	Date				: 7th November 2020
-	Gateway versions	: 2.1.1 - 9.0.1
+	Version				: 9.0.2
+	Date				: TBA January 2021
+	Gateway versions	: 2.1.1 - 9.0.2
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
 
@@ -31,6 +31,9 @@
 
 
 	Revision History 	:
+				v9.0.2 TBA January 2021
+					Changed Network Monitoring / Link monitors from h-table to v-table to accommodate new values in 9.0.2
+	
 				v9.0.1 7th November 2020
 					Consolidated creation of $SgTableLookup to new combined section in the 'first run' loop, as SigGps now recursively reference themselves for Call Recording
 					Removed redundant Sig Gp type (e.g. '(SIP)') from the start of each SigGp heading
@@ -313,7 +316,7 @@ param(
 begin
 {
 
-	$ScriptVersion = '9.0.1'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
+	$ScriptVersion = '9.0.2'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
 	$Error.Clear()		  #Clear PowerShell's error variable
 	$Global:Debug = $psboundparameters.debug.ispresent
 
@@ -475,6 +478,7 @@ begin
 	$BridgeRegionSettingsProtocolLookup = @{'0' = 'MSTP'; '1' = '<Unhandled Value>'; '2' = '<Unhandled Value>' }
 
 	$LinkMonitorHostTypeLookup = @{'0' = 'Host'; '1' = 'Gateway' }
+	$LinkMonitorTypeLookup = @{'0' = 'CAC/IPSEC'; '1' = 'Backup Default Route' }
 
 	#SIP Profiles
 	$SipProfileFrmHdrLookup = @{'0' = 'Disable'; '1' = 'SBC Edge FQDN'; '2' = 'Server FQDN'; '3' = 'Static'}
@@ -2272,6 +2276,27 @@ begin
 					}
 
 					#---------- System ------------------------
+					'SBA'
+					{
+						$SBAGroups = $node.GetElementsByTagName('Token')
+						ForEach ($SBAGroup in $SBAGroups)
+						{
+							# ---- Skype / Lync CAC Profiles ----------
+							if ($SBAGroup.name -eq 'CACProfile')
+							{
+								$CACProfiles = $node.GetElementsByTagName('ID')
+								ForEach ($CACProfile in $CACProfiles)
+								{
+									if ($CACProfile.IE.classname -eq 'CAC_PROFILE_CONFIG')
+									{
+										$CACProfileLookup.Add($CACProfile.value, (Fix-NullDescription -TableDescription $CACProfile.IE.Description -TableValue $CACProfile.value -TablePrefix 'CAC Profile #')) # Referenced by Network Monitoring / Link Monitors
+									}
+								}
+							}
+						}
+					}
+
+					#---------- System ------------------------
 					'System'
 					{
 						$systemgroups = $node.GetElementsByTagName('Token')
@@ -2363,6 +2388,28 @@ begin
 									if ($RemoteLogServer.IE.classname -eq 'LOGGER_SYSLOG_DEST')
 									{
 										$LogServerLookup.Add($RemoteLogServer.value, $RemoteLogServer.IE.ServerAddress) # Referenced by Logging Configuration - Subsystems
+									}
+								}
+							}
+						}
+					}
+
+					#---------- IP SEC ------------
+					'IPSec'
+					{
+						$IPSecGroups = $node.GetElementsByTagName('Token')
+						ForEach($IPSecGroup in $IPSecGroups)
+						{
+							# ---- Tunnel Tables ----------
+							if ($IPSecGroup.name -eq 'IPSecConnectionTable')
+							{
+								$IPSecTunnels = $IPSecGroup.GetElementsByTagName('ID')
+								ForEach ($IPSecTunnel in $IPSecTunnels)
+								{
+									# ---- Syslog Servers ----------
+									if ($IPSecTunnel.IE.classname -eq 'NETSERV_IPSEC_CONNECTION_OBJ_CFG_IE')
+									{
+										$IPSecTunnelLookup.Add($IPSecTunnel.value, $IPSecTunnel.IE.TunnelName) # Referenced by Network Monitoring / Link Monitors
 									}
 								}
 							}
@@ -3997,8 +4044,6 @@ begin
 							# ---- Network Monitoring ----------
 							if ($IPRoute.name -eq 'LinkMonitorConfig')
 							{
-								$LinkMonitorColumnTitles = @('Description', 'IP Address / Host Name', 'Peer Type', 'Poll Period', 'Failed Polls for Down State', 'Successful Polls for Up State')
-								$LinkMonitorCollection = @()
 								$NetworkMonitoringData = @()
 								$LinkMonitors = $IPRoute.GetElementsByTagName('ID')
 								if ($LinkMonitors.Count -ne 0)
@@ -4007,11 +4052,51 @@ begin
 									{
 										if ($MonitoredHost.IE.classname -eq 'NETSERV_LINK_MONITOR_CFG_IE')
 										{
-											$MonitoredHostObject = @($MonitoredHost.IE.GWDescription, $MonitoredHost.IE.HostIpAddress, $LinkMonitorHostTypeLookup.Get_Item($MonitoredHost.IE.HostType), $MonitoredHost.IE.TimeProbePeriod, $MonitoredHost.IE.PollToDownState, $MonitoredHost.IE.PollToServiceReadyState)
-											$LinkMonitorCollection += , $MonitoredHostObject
+											$LinkMonitorTable = @() #null the collection for each table
+											$LinkMonitorTable += ,('SPAN-L', 'Link Monitor Table', '', '')
+											$LinkMonitorDescription = (Fix-NullDescription -TableDescription $MonitoredHost.IE.GWDescription -TableValue $MonitoredHost.value -TablePrefix 'Link Monitor #')
+											$LinkMonitorTable += ,('Description', $LinkMonitorDescription, '' , '')
+											$LinkMonitorTable += ,('Service Status', '<Not captured>', '' , '')
+											$LinkMonitorTable += ,('SPAN-L', 'Settings', '', '')
+											switch ($MonitoredHost.IE.HostType)
+											{
+												'0'
+												{
+													# Host
+													$LinkMonitorTable += ,('Monitor Type', ($LinkMonitorTypeLookup.Get_Item($MonitoredHost.IE.MonitorType)), '' , '')
+													$LinkMonitorTable += ,('Monitored Peer Type', 'Host', '' , '')
+													$LinkMonitorTable += ,('Host Name', $MonitoredHost.IE.HostIpAddress, '' , '')
+													$LinkMonitorTable += ,('Host IP Address', '<Not captured>', '' , '')
+													$LinkMonitorTable += ,('Poll Period', ($MonitoredHost.IE.TimeProbePeriod + ' secs [5..60]'), '' , '')
+													$LinkMonitorTable += ,('Failed Polls for Down State', $MonitoredHost.IE.PollToDownState, '' , '')
+													$LinkMonitorTable += ,('Successful Polls for Up State', $MonitoredHost.IE.PollToServiceReadyState, '' , '')
+												}
+												'1'
+												{
+													# Gateway
+													$LinkMonitorTable += ,('Monitor Type', ($LinkMonitorTypeLookup.Get_Item($MonitoredHost.IE.MonitorType)), '' , '')
+													$LinkMonitorTable += ,('Monitored Peer Type', 'Gateway', '' , '')
+													$LinkMonitorTable += ,('Gateway IP Address', $MonitoredHost.IE.HostIpAddress, '' , '')
+													$LinkMonitorTable += ,('Lync CAC Profile', ($CACProfileLookup.Get_Item($MonitoredHost.IE.CACProfileID)), '' , '')
+													$LinkMonitorTable += ,('Poll Period', ($MonitoredHost.IE.TimeProbePeriod + ' secs [5..60]'), '' , '')
+													$LinkMonitorTable += ,('Failed Polls for Down State', $MonitoredHost.IE.PollToDownState, '' , '')
+													$LinkMonitorTable += ,('Successful Polls for Up State', $MonitoredHost.IE.PollToServiceReadyState, '' , '')
+													$IPSecTunnelList = ''
+													$IPSecTunnelList += ($IPSecTunnelLookup.Get_Item($MonitoredHost.IE.IdIPsec_1) + "`n")
+													$IPSecTunnelList += ($IPSecTunnelLookup.Get_Item($MonitoredHost.IE.IdIPsec_2) + "`n")
+													$IPSecTunnelList += ($IPSecTunnelLookup.Get_Item($MonitoredHost.IE.IdIPsec_3) + "`n")
+													$IPSecTunnelList += ($IPSecTunnelLookup.Get_Item($MonitoredHost.IE.IdIPsec_4) + "`n")
+													$IPSecTunnelList = Strip-TrailingCR -DelimitedString $IPSecTunnelList
+													$LinkMonitorTable += ,('Associated IPsec Tunnels', $IPSecTunnelList, '' , '')
+												}
+												default
+												{
+													$LinkMonitorTable += ,('Monitor Type', '<Unhandled Value>', '' , '')
+												}
+											}
+											$NetworkMonitoringData += ,('Link Monitors', $LinkMonitorDescription, '', $LinkMonitorTable)
 										}
 									}
-									$NetworkMonitoringData += ,('Network Monitoring', 'Link Monitors', $LinkMonitorColumnTitles, $LinkMonitorCollection)
 								}
 							}
 							# ---- RIPConfiguration ----------
@@ -4225,7 +4310,7 @@ begin
 							# ---- Skype / Lync CAC Profiles ----------
 							if ($SBAGroup.name -eq 'CACProfile')
 							{
-								$CACProfileColumnTitles = @('Description', 'Skype / Lync Profiles Name', 'Link Audio Bandwidth (kbps)', 'Session Audio Bandwidth (kbps)', 'Link Video Bandwidth (kbps)', 'Session Video Bandwidth (kbps)')
+								$CACProfileColumnTitles = @('Description', 'Skype / Lync Profile Name', 'Link Audio Bandwidth (kbps)', 'Session Audio Bandwidth (kbps)', 'Link Video Bandwidth (kbps)', 'Session Video Bandwidth (kbps)')
 								$CACProfileCollection = @()
 								$CACProfiles = $node.GetElementsByTagName('ID')
 								if ($CACProfiles.Count -ne 0)
@@ -9965,6 +10050,9 @@ process
 	$LogServerLookup = @{'0' = 'Local Logs';}		#The names of the Log Servers			Referenced by: Logging Configuration / Subsystems
 	$DHCPPoolLookup = @{}							#The names of the DHCP Pools (scopes)	Referenced by: DHCP Static Clients
 	$TODTablesLookup = @{'0' = 'None';}				#The names of the Time of Day Tables	Referenced by: Call Routes
+	$CACProfileLookup = @{}							#The names of the Skype/Lync CAC profiles	Referenced by: Network Monitoring / Link Monitors
+	$IPSecTunnelLookup = @{}						#The names of the IP Sec tunnel tables	Referenced by: Network Monitoring / Link Monitors
+
 
 	#write-warning "Inputfile = $($inputfile)"	- I'll keep these here until begin/process/end is bedded down some more
 	#write-warning "FullName  = $($FullName)"
@@ -10033,157 +10121,3 @@ end
 
 
 #Code signing certificate kindly provided by Digicert:
-# SIG # Begin signature block
-# MIIceAYJKoZIhvcNAQcCoIIcaTCCHGUCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
-# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUdq+AVhw2/cA7wKM++9fC8LiM
-# eqKgghenMIIFMDCCBBigAwIBAgIQA1GDBusaADXxu0naTkLwYTANBgkqhkiG9w0B
-# AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
-# VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
-# c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTIwMDQxNzAwMDAwMFoXDTIxMDcw
-# MTEyMDAwMFowbTELMAkGA1UEBhMCQVUxGDAWBgNVBAgTD05ldyBTb3V0aCBXYWxl
-# czESMBAGA1UEBxMJUGV0ZXJzaGFtMRcwFQYDVQQKEw5HcmVpZyBTaGVyaWRhbjEX
-# MBUGA1UEAxMOR3JlaWcgU2hlcmlkYW4wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
-# ggEKAoIBAQC0PMhHbI+fkQcYFNzZHgVAuyE3BErOYAVBsCjZgWFMhqvhEq08El/W
-# PNdtlcOaTPMdyEibyJY8ZZTOepPVjtHGFPI08z5F6BkAmyJ7eFpR9EyCd6JRJZ9R
-# ibq3e2mfqnv2wB0rOmRjnIX6XW6dMdfs/iFaSK4pJAqejme5Lcboea4ZJDCoWOK7
-# bUWkoqlY+CazC/Cb48ZguPzacF5qHoDjmpeVS4/mRB4frPj56OvKns4Nf7gOZpQS
-# 956BgagHr92iy3GkExAdr9ys5cDsTA49GwSabwpwDcgobJ+cYeBc1tGElWHVOx0F
-# 24wBBfcDG8KL78bpqOzXhlsyDkOXKM21AgMBAAGjggHFMIIBwTAfBgNVHSMEGDAW
-# gBRaxLl7KgqjpepxA8Bg+S32ZXUOWDAdBgNVHQ4EFgQUzBwyYxT+LFH+GuVtHo2S
-# mSHS/N0wDgYDVR0PAQH/BAQDAgeAMBMGA1UdJQQMMAoGCCsGAQUFBwMDMHcGA1Ud
-# HwRwMG4wNaAzoDGGL2h0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9zaGEyLWFzc3Vy
-# ZWQtY3MtZzEuY3JsMDWgM6Axhi9odHRwOi8vY3JsNC5kaWdpY2VydC5jb20vc2hh
-# Mi1hc3N1cmVkLWNzLWcxLmNybDBMBgNVHSAERTBDMDcGCWCGSAGG/WwDATAqMCgG
-# CCsGAQUFBwIBFhxodHRwczovL3d3dy5kaWdpY2VydC5jb20vQ1BTMAgGBmeBDAEE
-# ATCBhAYIKwYBBQUHAQEEeDB2MCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdp
-# Y2VydC5jb20wTgYIKwYBBQUHMAKGQmh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNv
-# bS9EaWdpQ2VydFNIQTJBc3N1cmVkSURDb2RlU2lnbmluZ0NBLmNydDAMBgNVHRMB
-# Af8EAjAAMA0GCSqGSIb3DQEBCwUAA4IBAQCtV/Nu/2vgu+rHGFI6gssYWfYLEwXO
-# eJqOYcYYjb7dk5sRTninaUpKt4WPuFo9OroNOrw6bhvPKdzYArXLCGbnvi40LaJI
-# AOr9+V/+rmVrHXcYxQiWLwKI5NKnzxB2sJzM0vpSzlj1+fa5kCnpKY6qeuv7QUCZ
-# 1+tHunxKW2oF+mBD1MV2S4+Qgl4pT9q2ygh9DO5TPxC91lbuT5p1/flI/3dHBJd+
-# KZ9vYGdsJO5vS4MscsCYTrRXvgvj0wl+Nwumowu4O0ROqLRdxCZ+1X6a5zNdrk4w
-# Dbdznv3E3s3My8Axuaea4WHulgAvPosFrB44e/VHDraIcNCx/GBKNYs8MIIFMDCC
-# BBigAwIBAgIQBAkYG1/Vu2Z1U0O1b5VQCDANBgkqhkiG9w0BAQsFADBlMQswCQYD
-# VQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGln
-# aWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVkIElEIFJvb3QgQ0Ew
-# HhcNMTMxMDIyMTIwMDAwWhcNMjgxMDIyMTIwMDAwWjByMQswCQYDVQQGEwJVUzEV
-# MBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29t
-# MTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFzc3VyZWQgSUQgQ29kZSBTaWduaW5n
-# IENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA+NOzHH8OEa9ndwfT
-# CzFJGc/Q+0WZsTrbRPV/5aid2zLXcep2nQUut4/6kkPApfmJ1DcZ17aq8JyGpdgl
-# rA55KDp+6dFn08b7KSfH03sjlOSRI5aQd4L5oYQjZhJUM1B0sSgmuyRpwsJS8hRn
-# iolF1C2ho+mILCCVrhxKhwjfDPXiTWAYvqrEsq5wMWYzcT6scKKrzn/pfMuSoeU7
-# MRzP6vIK5Fe7SrXpdOYr/mzLfnQ5Ng2Q7+S1TqSp6moKq4TzrGdOtcT3jNEgJSPr
-# CGQ+UpbB8g8S9MWOD8Gi6CxR93O8vYWxYoNzQYIH5DiLanMg0A9kczyen6Yzqf0Z
-# 3yWT0QIDAQABo4IBzTCCAckwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8E
-# BAMCAYYwEwYDVR0lBAwwCgYIKwYBBQUHAwMweQYIKwYBBQUHAQEEbTBrMCQGCCsG
-# AQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wQwYIKwYBBQUHMAKGN2h0
-# dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RD
-# QS5jcnQwgYEGA1UdHwR6MHgwOqA4oDaGNGh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNv
-# bS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwOqA4oDaGNGh0dHA6Ly9jcmwz
-# LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwTwYDVR0g
-# BEgwRjA4BgpghkgBhv1sAAIEMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8vd3d3LmRp
-# Z2ljZXJ0LmNvbS9DUFMwCgYIYIZIAYb9bAMwHQYDVR0OBBYEFFrEuXsqCqOl6nED
-# wGD5LfZldQ5YMB8GA1UdIwQYMBaAFEXroq/0ksuCMS1Ri6enIZ3zbcgPMA0GCSqG
-# SIb3DQEBCwUAA4IBAQA+7A1aJLPzItEVyCx8JSl2qB1dHC06GsTvMGHXfgtg/cM9
-# D8Svi/3vKt8gVTew4fbRknUPUbRupY5a4l4kgU4QpO4/cY5jDhNLrddfRHnzNhQG
-# ivecRk5c/5CxGwcOkRX7uq+1UcKNJK4kxscnKqEpKBo6cSgCPC6Ro8AlEeKcFEeh
-# emhor5unXCBc2XGxDI+7qPjFEmifz0DLQESlE/DmZAwlCEIysjaKJAL+L3J+HNdJ
-# RZboWR3p+nRka7LrZkPas7CM1ekN3fYBIM6ZMWM9CBoYs4GbT8aTEAb8B4H6i9r5
-# gkn3Ym6hU/oSlBiFLpKR6mhsRDKyZqHnGKSaZFHvMIIGajCCBVKgAwIBAgIQAwGa
-# Ajr/WLFr1tXq5hfwZjANBgkqhkiG9w0BAQUFADBiMQswCQYDVQQGEwJVUzEVMBMG
-# A1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEw
-# HwYDVQQDExhEaWdpQ2VydCBBc3N1cmVkIElEIENBLTEwHhcNMTQxMDIyMDAwMDAw
-# WhcNMjQxMDIyMDAwMDAwWjBHMQswCQYDVQQGEwJVUzERMA8GA1UEChMIRGlnaUNl
-# cnQxJTAjBgNVBAMTHERpZ2lDZXJ0IFRpbWVzdGFtcCBSZXNwb25kZXIwggEiMA0G
-# CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCjZF38fLPggjXg4PbGKuZJdTvMbuBT
-# qZ8fZFnmfGt/a4ydVfiS457VWmNbAklQ2YPOb2bu3cuF6V+l+dSHdIhEOxnJ5fWR
-# n8YUOawk6qhLLJGJzF4o9GS2ULf1ErNzlgpno75hn67z/RJ4dQ6mWxT9RSOOhkRV
-# fRiGBYxVh3lIRvfKDo2n3k5f4qi2LVkCYYhhchhoubh87ubnNC8xd4EwH7s2AY3v
-# J+P3mvBMMWSN4+v6GYeofs/sjAw2W3rBerh4x8kGLkYQyI3oBGDbvHN0+k7Y/qpA
-# 8bLOcEaD6dpAoVk62RUJV5lWMJPzyWHM0AjMa+xiQpGsAsDvpPCJEY93AgMBAAGj
-# ggM1MIIDMTAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8E
-# DDAKBggrBgEFBQcDCDCCAb8GA1UdIASCAbYwggGyMIIBoQYJYIZIAYb9bAcBMIIB
-# kjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQuY29tL0NQUzCCAWQG
-# CCsGAQUFBwICMIIBVh6CAVIAQQBuAHkAIAB1AHMAZQAgAG8AZgAgAHQAaABpAHMA
-# IABDAGUAcgB0AGkAZgBpAGMAYQB0AGUAIABjAG8AbgBzAHQAaQB0AHUAdABlAHMA
-# IABhAGMAYwBlAHAAdABhAG4AYwBlACAAbwBmACAAdABoAGUAIABEAGkAZwBpAEMA
-# ZQByAHQAIABDAFAALwBDAFAAUwAgAGEAbgBkACAAdABoAGUAIABSAGUAbAB5AGkA
-# bgBnACAAUABhAHIAdAB5ACAAQQBnAHIAZQBlAG0AZQBuAHQAIAB3AGgAaQBjAGgA
-# IABsAGkAbQBpAHQAIABsAGkAYQBiAGkAbABpAHQAeQAgAGEAbgBkACAAYQByAGUA
-# IABpAG4AYwBvAHIAcABvAHIAYQB0AGUAZAAgAGgAZQByAGUAaQBuACAAYgB5ACAA
-# cgBlAGYAZQByAGUAbgBjAGUALjALBglghkgBhv1sAxUwHwYDVR0jBBgwFoAUFQAS
-# KxOYspkH7R7for5XDStnAs0wHQYDVR0OBBYEFGFaTSS2STKdSip5GoNL9B6Jwcp9
-# MH0GA1UdHwR2MHQwOKA2oDSGMmh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdp
-# Q2VydEFzc3VyZWRJRENBLTEuY3JsMDigNqA0hjJodHRwOi8vY3JsNC5kaWdpY2Vy
-# dC5jb20vRGlnaUNlcnRBc3N1cmVkSURDQS0xLmNybDB3BggrBgEFBQcBAQRrMGkw
-# JAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBBBggrBgEFBQcw
-# AoY1aHR0cDovL2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElE
-# Q0EtMS5jcnQwDQYJKoZIhvcNAQEFBQADggEBAJ0lfhszTbImgVybhs4jIA+Ah+WI
-# //+x1GosMe06FxlxF82pG7xaFjkAneNshORaQPveBgGMN/qbsZ0kfv4gpFetW7ea
-# sGAm6mlXIV00Lx9xsIOUGQVrNZAQoHuXx/Y/5+IRQaa9YtnwJz04HShvOlIJ8Oxw
-# YtNiS7Dgc6aSwNOOMdgv420XEwbu5AO2FKvzj0OncZ0h3RTKFV2SQdr5D4HRmXQN
-# JsQOfxu19aDxxncGKBXp2JPlVRbwuwqrHNtcSCdmyKOLChzlldquxC5ZoGHd2vNt
-# omHpigtt7BIYvfdVVEADkitrwlHCCkivsNRu4PQUCjob4489yq9qjXvc2EQwggbN
-# MIIFtaADAgECAhAG/fkDlgOt6gAK6z8nu7obMA0GCSqGSIb3DQEBBQUAMGUxCzAJ
-# BgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5k
-# aWdpY2VydC5jb20xJDAiBgNVBAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBD
-# QTAeFw0wNjExMTAwMDAwMDBaFw0yMTExMTAwMDAwMDBaMGIxCzAJBgNVBAYTAlVT
-# MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
-# b20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQgSUQgQ0EtMTCCASIwDQYJKoZI
-# hvcNAQEBBQADggEPADCCAQoCggEBAOiCLZn5ysJClaWAc0Bw0p5WVFypxNJBBo/J
-# M/xNRZFcgZ/tLJz4FlnfnrUkFcKYubR3SdyJxArar8tea+2tsHEx6886QAxGTZPs
-# i3o2CAOrDDT+GEmC/sfHMUiAfB6iD5IOUMnGh+s2P9gww/+m9/uizW9zI/6sVgWQ
-# 8DIhFonGcIj5BZd9o8dD3QLoOz3tsUGj7T++25VIxO4es/K8DCuZ0MZdEkKB4YNu
-# gnM/JksUkK5ZZgrEjb7SzgaurYRvSISbT0C58Uzyr5j79s5AXVz2qPEvr+yJIvJr
-# GGWxwXOt1/HYzx4KdFxCuGh+t9V3CidWfA9ipD8yFGCV/QcEogkCAwEAAaOCA3ow
-# ggN2MA4GA1UdDwEB/wQEAwIBhjA7BgNVHSUENDAyBggrBgEFBQcDAQYIKwYBBQUH
-# AwIGCCsGAQUFBwMDBggrBgEFBQcDBAYIKwYBBQUHAwgwggHSBgNVHSAEggHJMIIB
-# xTCCAbQGCmCGSAGG/WwAAQQwggGkMDoGCCsGAQUFBwIBFi5odHRwOi8vd3d3LmRp
-# Z2ljZXJ0LmNvbS9zc2wtY3BzLXJlcG9zaXRvcnkuaHRtMIIBZAYIKwYBBQUHAgIw
-# ggFWHoIBUgBBAG4AeQAgAHUAcwBlACAAbwBmACAAdABoAGkAcwAgAEMAZQByAHQA
-# aQBmAGkAYwBhAHQAZQAgAGMAbwBuAHMAdABpAHQAdQB0AGUAcwAgAGEAYwBjAGUA
-# cAB0AGEAbgBjAGUAIABvAGYAIAB0AGgAZQAgAEQAaQBnAGkAQwBlAHIAdAAgAEMA
-# UAAvAEMAUABTACAAYQBuAGQAIAB0AGgAZQAgAFIAZQBsAHkAaQBuAGcAIABQAGEA
-# cgB0AHkAIABBAGcAcgBlAGUAbQBlAG4AdAAgAHcAaABpAGMAaAAgAGwAaQBtAGkA
-# dAAgAGwAaQBhAGIAaQBsAGkAdAB5ACAAYQBuAGQAIABhAHIAZQAgAGkAbgBjAG8A
-# cgBwAG8AcgBhAHQAZQBkACAAaABlAHIAZQBpAG4AIABiAHkAIAByAGUAZgBlAHIA
-# ZQBuAGMAZQAuMAsGCWCGSAGG/WwDFTASBgNVHRMBAf8ECDAGAQH/AgEAMHkGCCsG
-# AQUFBwEBBG0wazAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29t
-# MEMGCCsGAQUFBzAChjdodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNl
-# cnRBc3N1cmVkSURSb290Q0EuY3J0MIGBBgNVHR8EejB4MDqgOKA2hjRodHRwOi8v
-# Y3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3JsMDqg
-# OKA2hjRodHRwOi8vY3JsNC5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURS
-# b290Q0EuY3JsMB0GA1UdDgQWBBQVABIrE5iymQftHt+ivlcNK2cCzTAfBgNVHSME
-# GDAWgBRF66Kv9JLLgjEtUYunpyGd823IDzANBgkqhkiG9w0BAQUFAAOCAQEARlA+
-# ybcoJKc4HbZbKa9Sz1LpMUerVlx71Q0LQbPv7HUfdDjyslxhopyVw1Dkgrkj0bo6
-# hnKtOHisdV0XFzRyR4WUVtHruzaEd8wkpfMEGVWp5+Pnq2LN+4stkMLA0rWUvV5P
-# sQXSDj0aqRRbpoYxYqioM+SbOafE9c4deHaUJXPkKqvPnHZL7V/CSxbkS3BMAIke
-# /MV5vEwSV/5f4R68Al2o/vsHOE8Nxl2RuQ9nRc3Wg+3nkg2NsWmMT/tZ4CMP0qqu
-# AHzunEIOz5HXJ7cW7g/DvXwKoO4sCFWFIrjrGBpN/CohrUkxg0eVd3HcsRtLSxwQ
-# nHcUwZ1PL1qVCCkQJjGCBDswggQ3AgEBMIGGMHIxCzAJBgNVBAYTAlVTMRUwEwYD
-# VQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xMTAv
-# BgNVBAMTKERpZ2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBDb2RlIFNpZ25pbmcgQ0EC
-# EANRgwbrGgA18btJ2k5C8GEwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
-# oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFGZOu/uew5iR0lpylgo6
-# X5wJnf+wMA0GCSqGSIb3DQEBAQUABIIBABta4pSghDnKDstqejTiKPsMEQQRC6is
-# Oka76h0q/WrED3ykaNw+RLTK38drjiQ9ZOYBXc4BhQIAOAT6UgIQcGiC17mStRyL
-# WU1/QH9z3N3wOq2b7y9cpZnzZAJWzTP2bd7NLNmcljZ4AG6JWXmyr7vaUZ1Qnxvj
-# b6u8r4dLupn27vDnYNWiGJtIjUimMQHeOUoOieOa5CKmq320vS2+4sqjfFNE8tMz
-# 9iBOeSsqjn7Jp3JFvnH01k7gLAiYM9bx+AXkm/69uDNm5M4k1Y/JrQGJ/1E+fm5x
-# Gu23uisqB7aaYo1UPecaPdbr9NHMfLMqpQHX9FPftfWBiGeAL4mRMaqhggIPMIIC
-# CwYJKoZIhvcNAQkGMYIB/DCCAfgCAQEwdjBiMQswCQYDVQQGEwJVUzEVMBMGA1UE
-# ChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYD
-# VQQDExhEaWdpQ2VydCBBc3N1cmVkIElEIENBLTECEAMBmgI6/1ixa9bV6uYX8GYw
-# CQYFKw4DAhoFAKBdMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcN
-# AQkFMQ8XDTIwMTEwNzAyMzcyMFowIwYJKoZIhvcNAQkEMRYEFFSLg2saM3a2Bxvq
-# W67i+1lhKrngMA0GCSqGSIb3DQEBAQUABIIBAGnYgt0Z+fWgB0wU/aaHMLo2jdgc
-# fFpefAj7s0+r/Diw+Z8r9qluGm11yEIRpXlUljAVnfwadljWMUVl9TdDD3Ed3+co
-# jPeZ/y5eeaK/T3mkvU6FzqULJGz/nT/9X0wPhLxnFB79ZRE23YFQNOjkTyKtvmRu
-# 9TsbDCSJx0YYx5N4xVw6++UpZxorKr6zXYNJRQI2bbrOMSHzbpcV6gzpsZ22h3cF
-# pJ/EpXXB67GLH8e4gLy8TPjlmftxJ8aEfxK3D/uc34YGxhtDgIdkoJBiPlS5B/V8
-# aauAuFPLCyUtk5/eTVSwbeYgbMj6/JXVrLOqQEkELjOcQVAn1Se47L0DW3I=
-# SIG # End signature block
