@@ -15,7 +15,7 @@
 
 .NOTES
 	Version				: 9.0.2
-	Date				: TBA January 2021
+	Date				: 28th January 2021
 	Gateway versions	: 2.1.1 - 9.0.2
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
@@ -31,8 +31,14 @@
 
 
 	Revision History 	:
-				v9.0.2 TBA January 2021
-					Changed Network Monitoring / Link monitors from h-table to v-table to accommodate new values in 9.0.2
+				v9.0.2 28th January 2021
+					Changed Network Monitoring / Link monitors from h-table to v-table and updated to accommodate new values in 9.0.2
+					Added Protocols / IPSec / Tunnel Table
+					Changed some references to '<n/a>' and '<Not Captured>' to '<Not Available>' to reduce ambiguity & increase consistency
+					Now stamps '<Not Available>' into System / Node-Level Settings if the SweLite ID in nodeinfo.txt is blank
+					Fixed bugs:
+						- Fixed bug introduced in 9.0.1 where the lower half of each SIP Server table was skipped. (Bad test of SIP Recorders)
+						- Suppressed display of 'Send STUN Packets' in Media / Media System Configuration for the SweLite
 	
 				v9.0.1 7th November 2020
 					Consolidated creation of $SgTableLookup to new combined section in the 'first run' loop, as SigGps now recursively reference themselves for Call Recording
@@ -479,6 +485,11 @@ begin
 
 	$LinkMonitorHostTypeLookup = @{'0' = 'Host'; '1' = 'Gateway' }
 	$LinkMonitorTypeLookup = @{'0' = 'CAC/IPSEC'; '1' = 'Backup Default Route' }
+	
+	$IPSecActivationLookup = @{'0' = 'Always'; '1' = 'Link Monitor Action' }
+	$IPSecEncryptionLookup = @{'0' = 'AES256'; '1' = 'AES128'; '2' = '3DES' }
+	$IPSecIntegrityLookup = @{'0' = 'SHA1'; '1' = 'SHA256' }
+	$IPSecDHGrpLookup = @{'0' = 'DH group 1(768bit)'; '1' = 'DH group 2(1024bit)'; '2' = 'DH group 5(1536bit)'; '3' = 'DH group 14(2048bit)' }
 
 	#SIP Profiles
 	$SipProfileFrmHdrLookup = @{'0' = 'Disable'; '1' = 'SBC Edge FQDN'; '2' = 'Server FQDN'; '3' = 'Static'}
@@ -1368,11 +1379,11 @@ begin
 
 		if (!$NodeId)
 		{
-			$NodeId = '<Not captured>'
+			$NodeId = '<Not Available>'
 		}
 		if (!$HardwareID)
 		{
-			$HardwareID = '<Not captured>'
+			$HardwareID = '<Not Available>'
 		}
 
 		#Is 'inputfile' an XML or an archive?
@@ -1807,7 +1818,7 @@ begin
 					{
 						{(($_ -eq 'Node Serial Number') -or ($_ -eq 'SWe Lite ID'))}
 						{
-							if ($NodeId -ne '<Not captured>')
+							if ($NodeId -ne '<Not Available>')
 							{
 								#Then the user has provided one.
 								If ($NodeId -ne $TempNode1)
@@ -1815,7 +1826,10 @@ begin
 									write-warning -message ("User-provided NodeID of '{0}' differs from value of '{1}' from file. User value discarded." -f ($NodeID), ($TempNode1))
 								}
 							}
-							$NodeId = $TempNode1
+							If (-not [string]::IsNullOrEmpty($TempNode1))
+							{
+								$NodeId = $TempNode1
+							}
 						}
 
 						#We'll check the Hostname from NodeInfo in the initial parse and abort if it differs from what's in the XML - we assume user has mixed up XML & NodeInfo.
@@ -1826,7 +1840,7 @@ begin
 
 						'Hardware ID'
 						{
-							if ($HardwareID -ne '<Not captured>')
+							if ($HardwareID -ne '<Not Available>')
 							{
 								#Then the user has provided one.
 								If ($HardwareID -ne $TempNode1)
@@ -2406,7 +2420,6 @@ begin
 								$IPSecTunnels = $IPSecGroup.GetElementsByTagName('ID')
 								ForEach ($IPSecTunnel in $IPSecTunnels)
 								{
-									# ---- Syslog Servers ----------
 									if ($IPSecTunnel.IE.classname -eq 'NETSERV_IPSEC_CONNECTION_OBJ_CFG_IE')
 									{
 										$IPSecTunnelLookup.Add($IPSecTunnel.value, $IPSecTunnel.IE.TunnelName) # Referenced by Network Monitoring / Link Monitors
@@ -3505,7 +3518,7 @@ begin
 													}
 													else
 													{
-														$FXSPortType = '<n/a>' # Changed from mt usual '<n/a this rls>' to prevent the row spilling to multiple lines
+														$FXSPortType = '<n/a>' # Changed from my usual '<n/a this rls>' to prevent the row spilling to multiple lines
 													}
 													$FXSCardPortName = [regex]::replace($FXSCardPort.IE.PortName, '-' , ' ') # Turn the dash into a space
 													$FXSCardObject = @($FXSCard.value, $FXSCardPort.value, $EnabledLookup.Get_Item($FXSCardPort.IE.Enabled), $FXSCardPortName, $FXSCardPort.IE.PortAlias, $FXSCardPort.IE.PortDescription, ($FXSCardPort.IE.RxGain + ' dB'), ($FXSCardPort.IE.TxGain + ' dB'), $FXSPortType, $FXSFXOCountryLookup.Get_Item($FXSCardPort.IE.Country))
@@ -4056,7 +4069,7 @@ begin
 											$LinkMonitorTable += ,('SPAN-L', 'Link Monitor Table', '', '')
 											$LinkMonitorDescription = (Fix-NullDescription -TableDescription $MonitoredHost.IE.GWDescription -TableValue $MonitoredHost.value -TablePrefix 'Link Monitor #')
 											$LinkMonitorTable += ,('Description', $LinkMonitorDescription, '' , '')
-											$LinkMonitorTable += ,('Service Status', '<Not captured>', '' , '')
+											$LinkMonitorTable += ,('Service Status', '<Not Available>', '' , '')
 											$LinkMonitorTable += ,('SPAN-L', 'Settings', '', '')
 											switch ($MonitoredHost.IE.HostType)
 											{
@@ -4066,7 +4079,7 @@ begin
 													$LinkMonitorTable += ,('Monitor Type', ($LinkMonitorTypeLookup.Get_Item($MonitoredHost.IE.MonitorType)), '' , '')
 													$LinkMonitorTable += ,('Monitored Peer Type', 'Host', '' , '')
 													$LinkMonitorTable += ,('Host Name', $MonitoredHost.IE.HostIpAddress, '' , '')
-													$LinkMonitorTable += ,('Host IP Address', '<Not captured>', '' , '')
+													$LinkMonitorTable += ,('Host IP Address', '<Not Available>', '' , '')
 													$LinkMonitorTable += ,('Poll Period', ($MonitoredHost.IE.TimeProbePeriod + ' secs [5..60]'), '' , '')
 													$LinkMonitorTable += ,('Failed Polls for Down State', $MonitoredHost.IE.PollToDownState, '' , '')
 													$LinkMonitorTable += ,('Successful Polls for Up State', $MonitoredHost.IE.PollToServiceReadyState, '' , '')
@@ -4442,6 +4455,9 @@ begin
 												{($_ -eq '1') -or ($_ -eq '4')}
 												{
 													$CertificateCollectionMy += , ('SBC Certificates', ('SBC Primary Certificate - {0}' -f $CertCommonName), '', $CertificateObject)
+													#We want to save this for the IPSec Tunnel Tables
+													$IPSecTunnelLocalCert = [regex]::replace($cert.IE.CertSubjectName,'/',' /') #A space between values helps Word's line-wrapping
+													$IPSecTunnelLocalSANs = $CertificateSANs
 												}
 												'5'
 												{
@@ -4603,13 +4619,13 @@ begin
 										$SystemNetL1 += 'SPAN-L'
 										$SystemNetL2 += 'System LEDs'
 										$SystemNetL1 += 'Power LED'
-										$SystemNetL2 += '<n/a>'
+										$SystemNetL2 += '<Not Available>'
 										$SystemNetL1 += 'Alarm LED'
-										$SystemNetL2 += '<n/a>'
+										$SystemNetL2 += '<Not Available>'
 										$SystemNetL1 += 'Ready LED'
-										$SystemNetL2 += '<n/a>'
+										$SystemNetL2 += '<Not Available>'
 										$SystemNetL1 += 'Locator LED'
-										$SystemNetL2 += '<n/a>'
+										$SystemNetL2 += '<Not Available>'
 									}
 									$SystemNetL1 += 'SPAN-L'
 									$SystemNetL2 += 'Country Level Information'
@@ -4839,7 +4855,6 @@ begin
 									{
 										$MediaSystemCfgTable += ,('Start Port', ($systemgroup.IE.RTPRTCP_PortStart + ' [16384..32767]'), 'Current Music File', $MOHFilename)
 										$MediaSystemCfgTable += ,('Number of Port Pairs', ($systemgroup.IE.RTPRTCP_PortCount + ' [1..5000]'), '', '')
-										$MediaSystemCfgTable += ,('SPAN-L', '', '', '')
 									}
 									else
 									{
@@ -4855,8 +4870,8 @@ begin
 										$MediaSystemCfgTable += ,('SPAN-L', '', '', '')
 										$MediaSystemCfgTable += ,('Echo Canceller Type Option', (Test-ForNull -LookupTable $EchoCancellerLookup -value $systemgroup.IE.EchoCancel_LECOption), '', '')
 										$MediaSystemCfgTable += ,('Echo Cancel NLP Option', (Test-ForNull -LookupTable $EchoCancelNLPLookup -value $systemgroup.IE.EchoCancel_NLPOption), '', '')
+										$MediaSystemCfgTable += ,('Send STUN Packets', (Test-ForNull -LookupTable $EnabledLookup -value $systemgroup.IE.SendStunPackets), '', '')
 									}
-									$MediaSystemCfgTable += ,('Send STUN Packets', (Test-ForNull -LookupTable $EnabledLookup -value $systemgroup.IE.SendStunPackets), '', '')
 									$MediaSystemConfigData += , ('Media System Configuration', '', '', $MediaSystemCfgTable)
 								}
 							}
@@ -5198,6 +5213,242 @@ begin
 										}
 									}
 									$LoggingData += , ('Subsystems', '', $LoggingSubsystemColumnTitles, $LoggingSubsystemCollection)
+								}
+							}
+						}
+					}
+
+					#---------- IP SEC ------------
+					'IPSec'
+					{
+						$IPSecGroups = $node.GetElementsByTagName('Token')
+						ForEach($IPSecGroup in $IPSecGroups)
+						{
+							# ---- Tunnel Tables ----------
+							if ($IPSecGroup.name -eq 'IPSecConnectionTable')
+							{
+								$IPSecTunnels = $IPSecGroup.GetElementsByTagName('ID')
+								if ($IPSecTunnels.Count -ne 0)
+								{
+									$IPSecTunnelCollection = @()
+									ForEach ($IPSecTunnel in $IPSecTunnels)
+									{
+										if ($IPSecTunnel.IE.classname -eq $null) { continue } # Empty / deleted entry
+										if ($IPSecTunnel.IE.classname -eq 'NETSERV_IPSEC_CONNECTION_OBJ_CFG_IE')
+										{
+											$IPSecTunnelTable = @() #null the collection for each table
+											$IPSecTunnelDescription = Fix-NullDescription -TableDescription $IPSecTunnel.IE.TunnelName -TableValue $IPSecTunnel.value -TablePrefix 'Tunnel #'
+											#Now build the table:
+											$IPSecTunnelTable += ,('SPAN', 'IPsec Tunnel Table', '' , '')
+											$IPSecTunnelTable += ,('Tunnel Name', $IPSecTunnelDescription, '' , '')
+											$IPSecTunnelTable += ,('Admin State', $EnabledLookup.Get_Item($IPSecTunnel.IE.Enabled), '' , '')
+											$IPSecTunnelTable += ,('Service Status', '<Not Available>', '' , '')
+											$IPSecTunnelTable += ,('SPAN-L', 'Network Properties', 'SPAN-R', 'Authentication Parameters')
+											# Columns Diverge here. Prepare the table, building the L & R columns as independent arrays, then consolidating them together ready for Word.
+											$IPSecTunnelL1 = @()
+											$IPSecTunnelL2 = @()
+											$IPSecTunnelR1 = @()
+											$IPSecTunnelR2 = @()
+											#LH Column first:
+											$IPSecTunnelL1 += 'Operating Mode'
+											if ($IPSecTunnel.IE.OperatingMode -eq 0)
+											{
+												#"Initiator"
+												$IPSecTunnelL2 += 'Initiator'
+												$IPSecTunnelL1 += 'Tunnel Activation'
+												$IPSecTunnelL2 += $IPSecActivationLookup.Get_Item($IPSecTunnel.IE.TunnelActivation)
+											}
+											else
+											{
+												#"Responder"
+												$IPSecTunnelL2 += 'Responder'
+											}
+											$IPSecTunnelL1 += 'Allow Any Local Address'
+											if ($IPSecTunnel.IE.allowAnyLocalAddress -eq 0)
+											{
+												$IPSecTunnelL2 += 'Disabled'
+												$IPSecTunnelL1 += 'Local Address Type'
+												if ($IPSecTunnel.IE.localAddress -match '^[0-9\.]+$')
+												{
+													$IPSecTunnelL2 += 'IP Address'
+													$IPSecTunnelL1 += 'Local Address'
+													#Convert just the IP address back to its full Logical Interface name:
+													ForEach ($Name in $PortToIPAddressLookup.keys)
+													{
+														if ($PortToIPAddressLookup[$Name] -like "*($($IPSecTunnel.IE.localAddress))*")
+														{
+															$IPSecTunnelL2 += $PortToIPAddressLookup[$Name]
+															break
+														}
+													}
+												}
+												else
+												{
+													$IPSecTunnelL2 += 'FQDN'
+													$IPSecTunnelL1 += 'Local Address'
+													$IPSecTunnelL2 += $IPSecTunnel.IE.localAddress
+												}
+											}
+											else
+											{
+												$IPSecTunnelL2 += 'Enabled'
+											}
+											#If Operating Mode = Initiator, you're not asked to Allow Any Remote Address - only if Operating Mode = Responder
+											if ($IPSecTunnel.IE.OperatingMode -eq 0)
+											{
+												#"Initiator"
+												if ($IPSecTunnel.IE.remoteAddress -ne '0.0.0.0')
+												{
+													$IPSecTunnelL1 += 'Remote Address'
+													$IPSecTunnelL2 += $IPSecTunnel.IE.remoteAddress
+												}
+											}
+											else
+											{
+												#"Responder"
+												$IPSecTunnelL1 += 'Allow Any Remote Address'
+												if ($IPSecTunnel.IE.allowAnyRemoteAddress -eq 0)
+												{
+													$IPSecTunnelL2 += 'Disabled'
+													$IPSecTunnelL1 += 'Remote Address'
+													$IPSecTunnelL2 += $IPSecTunnel.IE.remoteAddress
+												}
+												else
+												{
+													$IPSecTunnelL2 += 'Enabled'
+												}
+											}
+											$IPSecTunnelL1 += 'Local Subnet Addresses'
+											$LocalSubnetAddresses = ($IPSecTunnel.IE.localSubnetAddress).Split(',') #Value in the file is formatted as '10.10.16.0/23,10.10.19.0/24'
+											$LocalSubnetList = ''
+											ForEach ($LocalSubnets in $LocalSubnetAddresses)
+											{
+												$LocalSubnetList += ($LocalSubnets + "`n")
+											}
+											$IPSecTunnelL2 += Strip-TrailingCR -DelimitedString $LocalSubnetList
+											$IPSecTunnelL1 += 'Remote Subnet Addresses'
+											$RemoteSubnetAddresses = ($IPSecTunnel.IE.RemoteSubnetAddress).Split(',') #Value in the file is formatted as '10.10.16.0/23,10.10.19.0/24'
+											$RemoteSubnetList = ''
+											ForEach ($RemoteSubnets in $RemoteSubnetAddresses)
+											{
+												$RemoteSubnetList += ($RemoteSubnets + "`n")
+											}
+											$IPSecTunnelL2 += Strip-TrailingCR -DelimitedString $RemoteSubnetList
+											$IPSecTunnelL1 += 'Allow Policy Rules'
+											$IPSecTunnelL2 += $EnabledLookup.Get_Item($IPSecTunnel.IE.applyPolicyRules)
+											#Now the RH
+											$IPSecTunnelR1 += 'SPAN-R'
+											$IPSecTunnelR2 += 'Local Attributes'
+											
+											$IPSecTunnelR1 += 'Subject Distinguished Name'
+											$IPSecTunnelR2 += $IPSecTunnelLocalCert #Previously captured from Certificates
+											$IPSecTunnelR1 += 'Subject Alternate Name(s)'
+											$IPSecTunnelR2 += $IPSecTunnelLocalSANs #Previously captured from Certificates
+											if ($IPSecTunnel.IE.peerAuthMode -eq 0)
+											{
+												#Certificate
+												$IPSecTunnelR1 += 'Use SAN Identifier'
+												if ($IPSecTunnel.IE.useSANIdentifier -eq 0)
+												{
+													$IPSecTunnelR2 += 'Disabled'
+												}
+												else
+												{
+													$IPSecTunnelR2 += 'Enabled'
+													$IPSecTunnelR1 += 'SAN Identifier'
+													$IPSecTunnelR2 += $IPSecTunnel.IE.localSANIdentifier
+												}
+												$IPSecTunnelR1 += 'SPAN-R'
+												$IPSecTunnelR2 += 'Remote Attributes'
+												$IPSecTunnelR1 += 'Authentication Mode'
+												$IPSecTunnelR2 += 'Certificate'
+												$IPSecTunnelR1 += 'Certificate Identifier'
+												$IPSecTunnelR2 += $IPSecTunnel.IE.peerAuthIdentifier
+											}
+											else
+											{
+												$IPSecTunnelR1 += 'SPAN-R'
+												$IPSecTunnelR2 += 'Remote Attributes'
+												$IPSecTunnelR1 += 'Authentication Mode'
+												$IPSecTunnelR2 += 'Preshared Key'
+												$IPSecTunnelR1 += 'Preshared Secret Setting'
+												$IPSecTunnelR2 += 'Use Current'
+											}
+											#Reassemble the above back into the correct column appearances for Word. Reconstitute for the length of the larger array
+											if ($IPSecTunnelL1.Count -ge $IPSecTunnelR1.Count)
+											{
+												$arrayCount = $IPSecTunnelL1.Count
+											}
+											else
+											{
+												$arrayCount = $IPSecTunnelR1.Count
+											}
+											for ($i = 0; $i -lt $arrayCount; $i++)
+											{
+												if (($IPSecTunnelL1[$i] -eq ''   ) -and ($IPSecTunnelL2[$i] -eq ''   ) -and ($IPSecTunnelR1[$i] -eq ''   ) -and ($IPSecTunnelR2[$i] -eq ''   )) {continue} #No point writing a totally blank row!
+												if (($IPSecTunnelL1[$i] -eq $null) -and ($IPSecTunnelL2[$i] -eq $null) -and ($IPSecTunnelR1[$i] -eq $null) -and ($IPSecTunnelR2[$i] -eq $null)) {continue} #No point writing a totally blank row!
+												$IPSecTunnelTable += ,($IPSecTunnelL1[$i], $IPSecTunnelL2[$i], $IPSecTunnelR1[$i], $IPSecTunnelR2[$i])
+											}
+											$IPSecTunnelTable += ,('SPAN-L', 'SA Expiry and Security Settings', 'SPAN-R', 'IKE/IPsec SA Cipher Suites')
+											# We have to diverge again. Prepare the table, building the L & R columns as independent arrays, then consolidating them together ready for Word.
+											$IPSecTunnelL1 = @()
+											$IPSecTunnelL2 = @()
+											$IPSecTunnelR1 = @()
+											$IPSecTunnelR2 = @()
+											#LH Column first:
+											$IPSecTunnelL1 += 'SPAN-L'
+											$IPSecTunnelL2 += 'IKE/IPsec SA Expiry'
+											$IPSecTunnelL1 += 'SA Expiry'
+											if ($IPSecTunnel.IE.enableRekeying -eq 0)
+											{
+												$IPSecTunnelL2 += 'Disabled'
+											}
+											else
+											{
+												$IPSecTunnelL2 += 'Enabled'
+												$IPSecTunnelL1 += 'IKE Lifetime'
+												$IPSecTunnelL2 += $IPSecTunnel.IE.ikeLifetime
+												$IPSecTunnelL1 += 'IPsec Lifetime'
+												$IPSecTunnelL2 += $IPSecTunnel.IE.ipsecLifetime
+												$IPSecTunnelL1 += 'Margin Time'
+												$IPSecTunnelL2 += $IPSecTunnel.IE.marginTime
+												$IPSecTunnelL1 += 'Keying Retries'
+												$IPSecTunnelL2 += $IPSecTunnel.IE.keyingRetries
+											}
+											$IPSecTunnelL1 += 'SPAN-L'
+											$IPSecTunnelL2 += 'SA Protections'
+											$IPSecTunnelL1 += 'Perfect Forward Secrecy'
+											$IPSecTunnelL2 += $EnabledLookup.Get_Item($IPSecTunnel.IE.enablePFS)
+											if ($IPSecTunnel.IE.enableRekeying -eq 1)
+											{
+												$IPSecTunnelL1 += 'Reauthentication'
+												$IPSecTunnelL2 += $EnabledLookup.Get_Item($IPSecTunnel.IE.enableReauthentication)
+											}
+											#Now the RH
+											$IPSecTunnelR1 += 'Encryption'
+											$IPSecTunnelR2 += $IPSecEncryptionLookup.Get_Item($IPSecTunnel.IE.encryption)
+											$IPSecTunnelR1 += 'Integrity'
+											$IPSecTunnelR2 += $IPSecIntegrityLookup.Get_Item($IPSecTunnel.IE.integrity)
+											$IPSecTunnelR1 += 'DH Group'
+											$IPSecTunnelR2 += $IPSecDHGrpLookup.Get_Item($IPSecTunnel.IE.dhgroup)
+											#Reassemble the above back into the correct column appearances for Word. Reconstitute for the length of the larger array
+											if ($IPSecTunnelL1.Count -ge $IPSecTunnelR1.Count)
+											{
+												$arrayCount = $IPSecTunnelL1.Count
+											}
+											else
+											{
+												$arrayCount = $IPSecTunnelR1.Count
+											}
+											for ($i = 0; $i -lt $arrayCount; $i++)
+											{
+												if (($IPSecTunnelL1[$i] -eq ''   ) -and ($IPSecTunnelL2[$i] -eq ''   ) -and ($IPSecTunnelR1[$i] -eq ''   ) -and ($IPSecTunnelR2[$i] -eq ''   )) {continue} #No point writing a totally blank row!
+												if (($IPSecTunnelL1[$i] -eq $null) -and ($IPSecTunnelL2[$i] -eq $null) -and ($IPSecTunnelR1[$i] -eq $null) -and ($IPSecTunnelR2[$i] -eq $null)) {continue} #No point writing a totally blank row!
+												$IPSecTunnelTable += ,($IPSecTunnelL1[$i], $IPSecTunnelL2[$i], $IPSecTunnelR1[$i], $IPSecTunnelR2[$i])
+											}
+											$IPSecTunnelCollection += , ('Tunnel Table', $IPSecTunnelDescription, '', $IPSecTunnelTable)
+										}
+									}
 								}
 							}
 						}
@@ -8008,7 +8259,7 @@ begin
 													}
 													#Go again for the lower half of the table:
 													# *Skip* if v9.0.0+ and this is a SIP Recorder (SipServerType = 1)
-													if (($SIPServer.IE.SipServerType -ne $null) -and ($SIPServer.IE.SipServerType -eq 1))
+													if ($SIPServerGroup.IE.SipServerType -ne 1)
 													{
 														$SSTableL1 = @()
 														$SSTableL2 = @()
@@ -9614,7 +9865,8 @@ begin
 				#$IPRouteData =  # Routing Table
 				$IPRouteData +=  $AllACLv6Data
 			$IPRouteData +=  $DHCPData
-			#$IPRouteData +=  # IP Sec
+			# IP Sec
+			$IPRouteData += $IPSecTunnelCollection
 			$IPRouteData += $NetworkMonitoringData
 			$IPRouteData += $CACData
 
@@ -10121,3 +10373,142 @@ end
 
 
 #Code signing certificate kindly provided by Digicert:
+# SIG # Begin signature block
+# MIIZgQYJKoZIhvcNAQcCoIIZcjCCGW4CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqbS04uya64c5XLqVBnTgwN5E
+# +uKgghSfMIIE/jCCA+agAwIBAgIQDUJK4L46iP9gQCHOFADw3TANBgkqhkiG9w0B
+# AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
+# VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
+# c3VyZWQgSUQgVGltZXN0YW1waW5nIENBMB4XDTIxMDEwMTAwMDAwMFoXDTMxMDEw
+# NjAwMDAwMFowSDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMu
+# MSAwHgYDVQQDExdEaWdpQ2VydCBUaW1lc3RhbXAgMjAyMTCCASIwDQYJKoZIhvcN
+# AQEBBQADggEPADCCAQoCggEBAMLmYYRnxYr1DQikRcpja1HXOhFCvQp1dU2UtAxQ
+# tSYQ/h3Ib5FrDJbnGlxI70Tlv5thzRWRYlq4/2cLnGP9NmqB+in43Stwhd4CGPN4
+# bbx9+cdtCT2+anaH6Yq9+IRdHnbJ5MZ2djpT0dHTWjaPxqPhLxs6t2HWc+xObTOK
+# fF1FLUuxUOZBOjdWhtyTI433UCXoZObd048vV7WHIOsOjizVI9r0TXhG4wODMSlK
+# XAwxikqMiMX3MFr5FK8VX2xDSQn9JiNT9o1j6BqrW7EdMMKbaYK02/xWVLwfoYer
+# vnpbCiAvSwnJlaeNsvrWY4tOpXIc7p96AXP4Gdb+DUmEvQECAwEAAaOCAbgwggG0
+# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsG
+# AQUFBwMIMEEGA1UdIAQ6MDgwNgYJYIZIAYb9bAcBMCkwJwYIKwYBBQUHAgEWG2h0
+# dHA6Ly93d3cuZGlnaWNlcnQuY29tL0NQUzAfBgNVHSMEGDAWgBT0tuEgHf4prtLk
+# YaWyoiWyyBc1bjAdBgNVHQ4EFgQUNkSGjqS6sGa+vCgtHUQ23eNqerwwcQYDVR0f
+# BGowaDAyoDCgLoYsaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL3NoYTItYXNzdXJl
+# ZC10cy5jcmwwMqAwoC6GLGh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9zaGEyLWFz
+# c3VyZWQtdHMuY3JsMIGFBggrBgEFBQcBAQR5MHcwJAYIKwYBBQUHMAGGGGh0dHA6
+# Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBPBggrBgEFBQcwAoZDaHR0cDovL2NhY2VydHMu
+# ZGlnaWNlcnQuY29tL0RpZ2lDZXJ0U0hBMkFzc3VyZWRJRFRpbWVzdGFtcGluZ0NB
+# LmNydDANBgkqhkiG9w0BAQsFAAOCAQEASBzctemaI7znGucgDo5nRv1CclF0CiNH
+# o6uS0iXEcFm+FKDlJ4GlTRQVGQd58NEEw4bZO73+RAJmTe1ppA/2uHDPYuj1UUp4
+# eTZ6J7fz51Kfk6ftQ55757TdQSKJ+4eiRgNO/PT+t2R3Y18jUmmDgvoaU+2QzI2h
+# F3MN9PNlOXBL85zWenvaDLw9MtAby/Vh/HUIAHa8gQ74wOFcz8QRcucbZEnYIpp1
+# FUL1LTI4gdr0YKK6tFL7XOBhJCVPst/JKahzQ1HavWPWH1ub9y4bTxMd90oNcX6X
+# t/Q/hOvB46NJofrOp79Wz7pZdmGJX36ntI5nePk2mOHLKNpbh6aKLzCCBTAwggQY
+# oAMCAQICEANRgwbrGgA18btJ2k5C8GEwDQYJKoZIhvcNAQELBQAwcjELMAkGA1UE
+# BhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2lj
+# ZXJ0LmNvbTExMC8GA1UEAxMoRGlnaUNlcnQgU0hBMiBBc3N1cmVkIElEIENvZGUg
+# U2lnbmluZyBDQTAeFw0yMDA0MTcwMDAwMDBaFw0yMTA3MDExMjAwMDBaMG0xCzAJ
+# BgNVBAYTAkFVMRgwFgYDVQQIEw9OZXcgU291dGggV2FsZXMxEjAQBgNVBAcTCVBl
+# dGVyc2hhbTEXMBUGA1UEChMOR3JlaWcgU2hlcmlkYW4xFzAVBgNVBAMTDkdyZWln
+# IFNoZXJpZGFuMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtDzIR2yP
+# n5EHGBTc2R4FQLshNwRKzmAFQbAo2YFhTIar4RKtPBJf1jzXbZXDmkzzHchIm8iW
+# PGWUznqT1Y7RxhTyNPM+RegZAJsie3haUfRMgneiUSWfUYm6t3tpn6p79sAdKzpk
+# Y5yF+l1unTHX7P4hWkiuKSQKno5nuS3G6HmuGSQwqFjiu21FpKKpWPgmswvwm+PG
+# YLj82nBeah6A45qXlUuP5kQeH6z4+ejryp7ODX+4DmaUEveegYGoB6/dostxpBMQ
+# Ha/crOXA7EwOPRsEmm8KcA3IKGyfnGHgXNbRhJVh1TsdBduMAQX3AxvCi+/G6ajs
+# 14ZbMg5DlyjNtQIDAQABo4IBxTCCAcEwHwYDVR0jBBgwFoAUWsS5eyoKo6XqcQPA
+# YPkt9mV1DlgwHQYDVR0OBBYEFMwcMmMU/ixR/hrlbR6Nkpkh0vzdMA4GA1UdDwEB
+# /wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzB3BgNVHR8EcDBuMDWgM6Axhi9o
+# dHRwOi8vY3JsMy5kaWdpY2VydC5jb20vc2hhMi1hc3N1cmVkLWNzLWcxLmNybDA1
+# oDOgMYYvaHR0cDovL2NybDQuZGlnaWNlcnQuY29tL3NoYTItYXNzdXJlZC1jcy1n
+# MS5jcmwwTAYDVR0gBEUwQzA3BglghkgBhv1sAwEwKjAoBggrBgEFBQcCARYcaHR0
+# cHM6Ly93d3cuZGlnaWNlcnQuY29tL0NQUzAIBgZngQwBBAEwgYQGCCsGAQUFBwEB
+# BHgwdjAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tME4GCCsG
+# AQUFBzAChkJodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRTSEEy
+# QXNzdXJlZElEQ29kZVNpZ25pbmdDQS5jcnQwDAYDVR0TAQH/BAIwADANBgkqhkiG
+# 9w0BAQsFAAOCAQEArVfzbv9r4LvqxxhSOoLLGFn2CxMFzniajmHGGI2+3ZObEU54
+# p2lKSreFj7haPTq6DTq8Om4bzync2AK1ywhm574uNC2iSADq/flf/q5lax13GMUI
+# li8CiOTSp88QdrCczNL6Us5Y9fn2uZAp6SmOqnrr+0FAmdfrR7p8SltqBfpgQ9TF
+# dkuPkIJeKU/atsoIfQzuUz8QvdZW7k+adf35SP93RwSXfimfb2BnbCTub0uDLHLA
+# mE60V74L49MJfjcLpqMLuDtETqi0XcQmftV+muczXa5OMA23c579xN7NzMvAMbmn
+# muFh7pYALz6LBaweOHv1Rw62iHDQsfxgSjWLPDCCBTAwggQYoAMCAQICEAQJGBtf
+# 1btmdVNDtW+VUAgwDQYJKoZIhvcNAQELBQAwZTELMAkGA1UEBhMCVVMxFTATBgNV
+# BAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTEkMCIG
+# A1UEAxMbRGlnaUNlcnQgQXNzdXJlZCBJRCBSb290IENBMB4XDTEzMTAyMjEyMDAw
+# MFoXDTI4MTAyMjEyMDAwMFowcjELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lD
+# ZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTExMC8GA1UEAxMoRGln
+# aUNlcnQgU0hBMiBBc3N1cmVkIElEIENvZGUgU2lnbmluZyBDQTCCASIwDQYJKoZI
+# hvcNAQEBBQADggEPADCCAQoCggEBAPjTsxx/DhGvZ3cH0wsxSRnP0PtFmbE620T1
+# f+Wondsy13Hqdp0FLreP+pJDwKX5idQ3Gde2qvCchqXYJawOeSg6funRZ9PG+ykn
+# x9N7I5TkkSOWkHeC+aGEI2YSVDNQdLEoJrskacLCUvIUZ4qJRdQtoaPpiCwgla4c
+# SocI3wz14k1gGL6qxLKucDFmM3E+rHCiq85/6XzLkqHlOzEcz+ryCuRXu0q16XTm
+# K/5sy350OTYNkO/ktU6kqepqCquE86xnTrXE94zRICUj6whkPlKWwfIPEvTFjg/B
+# ougsUfdzvL2FsWKDc0GCB+Q4i2pzINAPZHM8np+mM6n9Gd8lk9ECAwEAAaOCAc0w
+# ggHJMBIGA1UdEwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQM
+# MAoGCCsGAQUFBwMDMHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcwAYYYaHR0cDov
+# L29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8vY2FjZXJ0cy5k
+# aWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0MIGBBgNVHR8E
+# ejB4MDqgOKA2hjRodHRwOi8vY3JsNC5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1
+# cmVkSURSb290Q0EuY3JsMDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5jb20v
+# RGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3JsME8GA1UdIARIMEYwOAYKYIZIAYb9
+# bAACBDAqMCgGCCsGAQUFBwIBFhxodHRwczovL3d3dy5kaWdpY2VydC5jb20vQ1BT
+# MAoGCGCGSAGG/WwDMB0GA1UdDgQWBBRaxLl7KgqjpepxA8Bg+S32ZXUOWDAfBgNV
+# HSMEGDAWgBRF66Kv9JLLgjEtUYunpyGd823IDzANBgkqhkiG9w0BAQsFAAOCAQEA
+# PuwNWiSz8yLRFcgsfCUpdqgdXRwtOhrE7zBh134LYP3DPQ/Er4v97yrfIFU3sOH2
+# 0ZJ1D1G0bqWOWuJeJIFOEKTuP3GOYw4TS63XX0R58zYUBor3nEZOXP+QsRsHDpEV
+# +7qvtVHCjSSuJMbHJyqhKSgaOnEoAjwukaPAJRHinBRHoXpoaK+bp1wgXNlxsQyP
+# u6j4xRJon89Ay0BEpRPw5mQMJQhCMrI2iiQC/i9yfhzXSUWW6Fkd6fp0ZGuy62ZD
+# 2rOwjNXpDd32ASDOmTFjPQgaGLOBm0/GkxAG/AeB+ova+YJJ92JuoVP6EpQYhS6S
+# kepobEQysmah5xikmmRR7zCCBTEwggQZoAMCAQICEAqhJdbWMht+QeQF2jaXwhUw
+# DQYJKoZIhvcNAQELBQAwZTELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0
+# IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGlnaUNl
+# cnQgQXNzdXJlZCBJRCBSb290IENBMB4XDTE2MDEwNzEyMDAwMFoXDTMxMDEwNzEy
+# MDAwMFowcjELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcG
+# A1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTExMC8GA1UEAxMoRGlnaUNlcnQgU0hBMiBB
+# c3N1cmVkIElEIFRpbWVzdGFtcGluZyBDQTCCASIwDQYJKoZIhvcNAQEBBQADggEP
+# ADCCAQoCggEBAL3QMu5LzY9/3am6gpnFOVQoV7YjSsQOB0UzURB90Pl9TWh+57ag
+# 9I2ziOSXv2MhkJi/E7xX08PhfgjWahQAOPcuHjvuzKb2Mln+X2U/4Jvr40ZHBhpV
+# fgsnfsCi9aDg3iI/Dv9+lfvzo7oiPhisEeTwmQNtO4V8CdPuXciaC1TjqAlxa+DP
+# IhAPdc9xck4Krd9AOly3UeGheRTGTSQjMF287DxgaqwvB8z98OpH2YhQXv1mblZh
+# JymJhFHmgudGUP2UKiyn5HU+upgPhH+fMRTWrdXyZMt7HgXQhBlyF/EXBu89zdZN
+# 7wZC/aJTKk+FHcQdPK/P2qwQ9d2srOlW/5MCAwEAAaOCAc4wggHKMB0GA1UdDgQW
+# BBT0tuEgHf4prtLkYaWyoiWyyBc1bjAfBgNVHSMEGDAWgBRF66Kv9JLLgjEtUYun
+# pyGd823IDzASBgNVHRMBAf8ECDAGAQH/AgEAMA4GA1UdDwEB/wQEAwIBhjATBgNV
+# HSUEDDAKBggrBgEFBQcDCDB5BggrBgEFBQcBAQRtMGswJAYIKwYBBQUHMAGGGGh0
+# dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBDBggrBgEFBQcwAoY3aHR0cDovL2NhY2Vy
+# dHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9vdENBLmNydDCBgQYD
+# VR0fBHoweDA6oDigNoY0aHR0cDovL2NybDQuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0
+# QXNzdXJlZElEUm9vdENBLmNybDA6oDigNoY0aHR0cDovL2NybDMuZGlnaWNlcnQu
+# Y29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9vdENBLmNybDBQBgNVHSAESTBHMDgGCmCG
+# SAGG/WwAAgQwKjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQuY29t
+# L0NQUzALBglghkgBhv1sBwEwDQYJKoZIhvcNAQELBQADggEBAHGVEulRh1Zpze/d
+# 2nyqY3qzeM8GN0CE70uEv8rPAwL9xafDDiBCLK938ysfDCFaKrcFNB1qrpn4J6Jm
+# vwmqYN92pDqTD/iy0dh8GWLoXoIlHsS6HHssIeLWWywUNUMEaLLbdQLgcseY1jxk
+# 5R9IEBhfiThhTWJGJIdjjJFSLK8pieV4H9YLFKWA1xJHcLN11ZOFk362kmf7U2GJ
+# qPVrlsD0WGkNfMgBsbkodbeZY4UijGHKeZR+WfyMD+NvtQEmtmyl7odRIeRYYJu6
+# DC0rbaLEfrvEJStHAgh8Sa4TtuF8QkIoxhhWz0E0tmZdtnR79VYzIi8iNrJLokqV
+# 2PWmjlIxggRMMIIESAIBATCBhjByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGln
+# aUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhE
+# aWdpQ2VydCBTSEEyIEFzc3VyZWQgSUQgQ29kZSBTaWduaW5nIENBAhADUYMG6xoA
+# NfG7SdpOQvBhMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAA
+# MBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgor
+# BgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSe+EEx8uGKyyL4UkAlcTjocG1inTAN
+# BgkqhkiG9w0BAQEFAASCAQAFwqV2QrbBTJT6mDW/k+QJrdB9Onr7YY33ZwSdMdHT
+# UdWjRBK7ZPFhXmGMitj/shz1BcOWeC4QNq6rlTnnR50vXBGqlkd+2nqu20oC2CQl
+# Om34+sKg5y1NoPFO5A/mrqckfIlMz71obxKhRASPF17gh2jXQK9nVH7KF/AEF/nx
+# krXMQ2nOaR5LgjKI5784Lj1p7w2+CmK13cHFmyH6qXmNsejf9tx9sK0Een8toGPZ
+# zM0fWvrzcL0b+ym7XOVHY+Jf1/ggx2lLLfBDymQi0ZAs7bi5e4FhM3/11ZBRM8Jh
+# Y0P4I62IpZGhWFd6j5xe8FysH9KkRr2v6M48bLNg5YxVoYICIDCCAhwGCSqGSIb3
+# DQEJBjGCAg0wggIJAgEBMIGGMHIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdp
+# Q2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xMTAvBgNVBAMTKERp
+# Z2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBUaW1lc3RhbXBpbmcgQ0ECEA1CSuC+Ooj/
+# YEAhzhQA8N0wCQYFKw4DAhoFAKBdMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEw
+# HAYJKoZIhvcNAQkFMQ8XDTIxMDEyODEwMjYyNVowIwYJKoZIhvcNAQkEMRYEFGUi
+# YzqZcE0+FRmv9VS15w0Wsz8rMA0GCSqGSIb3DQEBAQUABIIBABsjCl1iRuUVP08f
+# AE2N1b8KvMtaEQ6PhFC7hN/boAlJnKX1Accd5zF6Gd+4Q8NEArlToSIZe6x9+7Po
+# q6JIwW/6eC8Fj5zJB6nLu5xOOuBJ9wJJczqRcxMpXK8rC1Y9WNYeT6C6yEk6kSuG
+# UPHWKcaZX96UtVbLwgH8pXUji2/ostzS7e219b5gmkinunm8JBAN9uwkTqedUxir
+# Ez+040OLvilAI59MbmDB3AUFYYvVoxcE9QkoRKLFedEVgfKEfY2sz9gj5dc/T2CR
+# 494OLuw1/17SGBNX6Em8t/mqlk6Y/FrrxSnX82ZmKb8PFXaQQWP6TVEN3bqgv3JK
+# 2BqjqDI=
+# SIG # End signature block
