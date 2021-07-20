@@ -330,7 +330,7 @@ param(
 begin
 {
 
-	$ScriptVersion = '9.0.2'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
+	$ScriptVersion = '9.0.4'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
 	$Error.Clear()		  #Clear PowerShell's error variable
 	$Global:Debug = $psboundparameters.debug.ispresent
 
