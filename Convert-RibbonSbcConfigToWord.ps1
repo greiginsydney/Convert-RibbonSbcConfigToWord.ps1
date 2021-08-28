@@ -14,8 +14,8 @@
 	It will run with no command-line parameters and assumes default values for the source and destination files.
 
 .NOTES
-	Version				: 9.0.4
-	Date				: 15th July 2021
+	Version				: 9.0.4B
+	Date				: TBA 2021
 	Gateway versions	: 2.1.1 - 9.0.4
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
@@ -32,6 +32,11 @@
 
 	Revision History 	:
 	
+				v9.0.4B TBA 2021:
+					Updated for PowerShell v7 compatibility:
+						- Replaced all tests for "if -eq ''" with 'if ([string]::IsNullOrEmpty...'
+						- Added '[char[]]' to multiple-value '.split()' methods
+				
 				v9.0.4 15th July 2021
 					Added new bit in 9.0.4:
 						Added Global Security Options / Test a Call
@@ -330,7 +335,7 @@ param(
 begin
 {
 
-	$ScriptVersion = '9.0.4'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
+	$ScriptVersion = '9.0.4B'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
 	$Error.Clear()		  #Clear PowerShell's error variable
 	$Global:Debug = $psboundparameters.debug.ispresent
 
