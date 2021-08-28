@@ -31,12 +31,12 @@
 
 
 	Revision History 	:
-	
+
 				v9.0.4B TBA 2021:
 					Updated for PowerShell v7 compatibility:
 						- Replaced all tests for "if -eq ''" with 'if ([string]::IsNullOrEmpty...'
 						- Added '[char[]]' to multiple-value '.split()' methods
-				
+	
 				v9.0.4 15th July 2021
 					Added new bit in 9.0.4:
 						Added Global Security Options / Test a Call
@@ -784,7 +784,7 @@ begin
 						$column = $i + 2
 					}
 				}
-				if (($value[$i] -eq $null) -or ($value[$i] -eq '')) { continue }
+				if ([string]::IsNullOrEmpty($value[$i])) { continue }
 				$table.cell($row,$column).Range.text = ($value[$i]).ToString() #ToString added as Win10 would crash here unable to cast System.Int32 to System.String.
 				if ($progressBarTitle -ne '')
 				{
@@ -878,7 +878,7 @@ begin
 	function Fix-NullDescription ()
 	{
 		param ([string]$TableDescription , [string]$TableValue, [string]$TablePrefix)
-		if (($TableDescription -eq $null) -or ($TableDescription -eq ''))
+		if ([string]::IsNullOrEmpty($TableDescription))
 		{
 			return ($TablePrefix + $TableValue)
 		}
@@ -1052,7 +1052,7 @@ begin
 	function Convert-RgbToWordColour ()
 	{
 		param ([string] $RGBString, [int32] $DefaultColour)
-		if ($rgbstring -eq '')
+		if ([string]::IsNullOrEmpty($rgbstring))
 		{
 			return $defaultcolour
 		}
@@ -1410,7 +1410,7 @@ begin
 			#First we get a list of the WAVs in the archive, then strip everything to leave the remaining MOH filename
 			$MOHFilename = Extract-FromArchive -Action 'List' -InputFile $InputFile -FileToExtract '*.wav' -ReturnType 'object'
 			$MOHFilename = [regex]::match($MOHFilename, '\.\\moh\\(.*.wav)').Groups[1].Value
-			if ($MOHFilename -eq '') { $MOHFilename = '<No file found>' }
+			if ([string]::IsNullOrEmpty($MOHFilename)) { $MOHFilename = '<No file found>' }
 		}
 		else
 		{
@@ -1479,7 +1479,7 @@ begin
 		write-verbose -message 'Opening the backup file'
 		try
 		{
-			if ($xml -eq '')
+			if ([string]::IsNullOrEmpty($xml))
 			{
 				$xml = [xml] (get-content -Path $InputFile -Encoding UTF8 -ErrorAction stop)
 			}
@@ -1729,7 +1729,7 @@ begin
 			[string]$release = $config.'#text'
 
 			$release = [regex]::replace($release, 'v' , ' v') # Add a space between version & build
-			if (($release -eq '') -or ($release -eq $null))	#Early versions (v1.x) don't capture the release
+			if ([string]::IsNullOrEmpty($release))	#Early versions (v1.x) don't capture the release
 			{
 				write-verbose -message 'System Release  = <Not Available>'
 				$release = '<Not Available - too old>'
@@ -1752,7 +1752,7 @@ begin
 
 			if ($platform -eq 'SWe Lite') { $SWeLite = 1 } else { $SWeLite = 0 } # I test for SWeLite SO much it's easier to refer to a boolean
 
-			if (($platform -eq '') -or ($platform -eq $null))	#This was only added with v4.0
+			if ([string]::IsNullOrEmpty($platform))	#This was only added with v4.0
 			{
 				write-verbose -message 'System platform = <Not Available>'
 				$platform = '<Not Available - too old>'
@@ -2156,7 +2156,7 @@ begin
 					},[0]
 				}
 				# Now paste in the last bit:
-				if ($LicenceExpiration -eq '') { $LicenceExpiration = '<Not Available>' }
+				if ([string]::IsNullOrEmpty($LicenceExpiration)) { $LicenceExpiration = '<Not Available>' }
 				if (!$SweLite)
 				{
 					$FeatureLicenceCollection += , @('','', '','') #Blank line separator
@@ -2335,9 +2335,9 @@ begin
 								$SystemNodeLevelData = @()
 								if ($systemgroup.IE.classname -eq 'SYSTEM_SERV_NET_CFG_IE')
 								{
-									if ($NodeInfo -ne '')
+									if (! [string]::IsNullOrEmpty($NodeInfo))
 									{
-										if ($NodeHostname -eq '')
+										if ([string]::IsNullOrEmpty($NodeHostname))
 										{
 											write-warning -Message ("Hostname ""$($NodeHostname)"" from NodeInfo <> hostname ""$($systemgroup.IE.NodeName)"" from symphonyconfig.")
 										}
@@ -3024,7 +3024,7 @@ begin
 												if ('Not' -match $ASM_version)
 												{
 													#This bit will only be true if there's no ASM, or we didn't extract from .tar or have -IncludeNodeInfo
-													if (($NetworkAdapter.IE.ifHwAddress -eq '') -or ($NetworkAdapter.IE.ifHwAddress -eq $null)) { continue }
+													if ([string]::IsNullOrEmpty($NetworkAdapter.IE.ifHwAddress)) { continue }
 												}
 											}
 											if ('mgmt1' -match $NetworkAdapter.IE.IfName) { continue } #Skip the Admin port - there's nothing to report.
@@ -3791,7 +3791,7 @@ begin
 														$ACLTable += ,('Precedence', ($ACL.IE.aclPrecedence + ' [1..65535]'), '', '')
 														$ACLTable += ,('Bucket Size', ($ACL.IE.aclBucketSize + ' [0..255]'), '', '')
 														$ACLTable += ,('Fill Rate', ($ACL.IE.aclFillRate + ' [0..25000]'), '', '')
-														if ($ACL.IE.ifName -eq '')
+														if ([string]::IsNullOrEmpty($ACL.IE.ifName))
 														{
 															$ACLTable += ,('Interface Name', 'Any', '', '')
 														}
@@ -3862,7 +3862,7 @@ begin
 											#This loop saves the underlying tables (if there are any):
 											foreach ($OneTable in $OrderedACLTableList)
 											{
-												if ($OneTable -eq '')
+												if ([string]::IsNullOrEmpty($OneTable))
 												{
 													# It's empty. (This will be the null entry we initialised the array with
 													continue
@@ -3985,7 +3985,7 @@ begin
 														$ACLv6Table += ,('Precedence', ($v6ACL.IE.aclPrecedence + ' [1..65535]'), '', '')
 														$ACLv6Table += ,('Bucket Size', ($v6ACL.IE.aclBucketSize + ' [0..255]'), '', '')
 														$ACLv6Table += ,('Fill Rate', ($v6ACL.IE.aclFillRate + ' [0..25000]'), '', '')
-														if ($v6ACL.IE.ifName -eq '')
+														if ([string]::IsNullOrEmpty($v6ACL.IE.ifName))
 														{
 															$ACLv6Table += ,('Interface Name', 'Any', '', '')
 														}
@@ -4056,7 +4056,7 @@ begin
 											#This loop saves the underlying tables (if there are any):
 											foreach ($OneTable in $OrderedACLv6TableList)
 											{
-												if ($OneTable -eq '')
+												if ([string]::IsNullOrEmpty($OneTable))
 												{
 													# It's empty. (This will be the null entry we initialised the array with
 													continue
@@ -4210,7 +4210,7 @@ begin
 									{
 										$DCprofiledcpriority = Test-ForNull -LookupTable $null -value $dcprofile.ie.dcpriority
 									}
-									if ($DCprofile.IE.Description -eq '')
+									if ([string]::IsNullOrEmpty($DCprofile.IE.Description))
 									{
 										$DCDescription = $DCprofile.IE.DomainController
 									}
@@ -4492,7 +4492,7 @@ begin
 								$SystemNodeLevelData = @()
 								if ($systemgroup.IE.classname -eq 'SYSTEM_SERV_NET_CFG_IE')
 								{
-									if ($systemgroup.IE.sysDescription -eq '')
+									if ([string]::IsNullOrEmpty($systemgroup.IE.sysDescription))
 									{
 										Write-AtBookmark -bookmark 'sysDescription' -data '<Not Provided>'
 									}
@@ -4501,7 +4501,7 @@ begin
 										Write-AtBookmark -bookmark 'sysDescription' -data $systemgroup.IE.sysDescription.ToString()
 									}
 
-									if ($systemgroup.IE.sysLocation -eq '')
+									if ([string]::IsNullOrEmpty($systemgroup.IE.sysLocation))
 									{
 										Write-AtBookmark -bookmark 'sysLocation' -data '<Not Provided>'
 									}
@@ -4509,7 +4509,7 @@ begin
 									{
 										Write-AtBookmark -bookmark 'sysLocation' -data $systemgroup.IE.sysLocation.ToString()
 									}
-									if ($systemgroup.IE.sysContact -eq '')
+									if ([string]::IsNullOrEmpty($systemgroup.IE.sysContact))
 									{
 										Write-AtBookmark -bookmark 'sysContact' -data '<Not Provided>'
 									}
@@ -4803,7 +4803,7 @@ begin
 									}
 									else
 									{
-										if (($systemgroup.IE.PrimaryClockRecoveryPort -eq '0.0') -or ($systemgroup.IE.PrimaryClockRecoveryPort -eq ''))
+										if (($systemgroup.IE.PrimaryClockRecoveryPort -eq '0.0') -or ([string]::IsNullOrEmpty($systemgroup.IE.PrimaryClockRecoveryPort)))
 										{
 											$PrimaryClockRecoveryPort   = '<n/a>'
 										}
@@ -4811,7 +4811,7 @@ begin
 										{
 											$PrimaryClockRecoveryPort = $systemgroup.IE.PrimaryClockRecoveryPort
 										}
-										if (($systemgroup.IE.SecondaryClockRecoveryPort -eq '0.0') -or ($systemgroup.IE.SecondaryClockRecoveryPort -eq ''))
+										if (($systemgroup.IE.SecondaryClockRecoveryPort -eq '0.0') -or ([string]::IsNullOrEmpty($systemgroup.IE.SecondaryClockRecoveryPort)))
 										{
 											$SecondaryClockRecoveryPort = '<n/a>'
 										}
@@ -5752,8 +5752,8 @@ begin
 													#It's O-L-D firmware. Each one of up to 6 hosts and masks is a separate element
 													for ($i = 1 ; $i -le 6 ; $i++)
 													{
-														if (($SIPGroup.IE.('RemoteHost' + $i) -eq '') -and ($SIPGroup.IE.('RemoteMask' + $i) -eq '')) { continue } #null entry
-														if ($SIPGroup.IE.('RemoteMask' + $i) -eq '')
+														if ([string]::IsNullOrEmpty(($SIPGroup.IE.('RemoteHost' + $i))) -and ([string]::IsNullOrEmpty($SIPGroup.IE.('RemoteMask' + $i)))) { continue } #null entry
+														if ([string]::IsNullOrEmpty($SIPGroup.IE.('RemoteMask' + $i)))
 														{
 															$SIPGroupFederationIP += $SIPGroup.IE.('RemoteHost' + $i) + " / <n/a>`n"
 														}
@@ -5769,8 +5769,8 @@ begin
 													$SIPGroupRemoteMasks = ($SIPgroup.IE.RemoteMasks).Split(',')
 													for ($i = 0 ; $i -le ($SIPGroupRemoteHosts.Count-1); $i++)
 													{
-														if (($SIPGroupRemoteHosts[$i] -eq '') -and ($SIPGroupRemoteMasks[$i] -eq '')) { continue} #Skip a null entry
-														if ($SIPGroupRemoteMasks[$i] -eq '')
+														if ([string]::IsNullOrEmpty(($SIPGroupRemoteHosts[$i])) -and ([string]::IsNullOrEmpty($SIPGroupRemoteMasks[$i]))) { continue} #Skip a null entry
+														if ([string]::IsNullOrEmpty($SIPGroupRemoteMasks[$i]))
 														{
 															$SIPGroupFederationIP += $SIPGroupRemoteHosts[$i] + " / <n/a>`n"
 														}
@@ -5781,7 +5781,7 @@ begin
 													}
 												}
 												$SIPGroupFederationIP = Strip-TrailingCR -DelimitedString $SIPGroupFederationIP
-												if ($SIPGroupFederationIP -eq '') { $SIPGroupFederationIP = '-- Table is empty --' }
+												if ([string]::IsNullOrEmpty($SIPGroupFederationIP)) { $SIPGroupFederationIP = '-- Table is empty --' }
 												$SIPgroupDescription = Fix-NullDescription -TableDescription $SIPgroup.IE.Description -TableValue $SIPgroup.value -TablePrefix 'SG #'
 												#Now build the table:
 												$SipSGTable += ,('SPAN', 'SIP Signaling Group', '' , '')
@@ -5975,7 +5975,7 @@ begin
 												}
 												$SIPSgL1 += 'Outbound Proxy IP/FQDN'
 												$SIPSgL2 += $SIPgroup.IE.OutboundProxy
-												if (($SIPgroup.IE.ProxyIpVersion -eq $null) -or ($SIPgroup.IE.OutboundProxy -eq ''))
+												if (([string]::IsNullOrEmpty($SIPgroup.IE.ProxyIpVersion -eq $null)) -or ([string]::IsNullOrEmpty($SIPgroup.IE.OutboundProxy)))
 												{
 													# Don't show 'Proxy IP Version'
 												}
@@ -6121,7 +6121,7 @@ begin
 															$VideoStreamMode = ''
 															if ($SIPgroup.IE.VideoProxyMode  -eq '1') { $VideoStreamMode += "Proxy`n"  }
 															if ($SIPgroup.IE.VideoDirectMode -eq '1') { $VideoStreamMode += "Direct`n" }
-															if ($VideoStreamMode -eq '') { $VideoStreamMode = "[None]" }
+															if ([string]::IsNullOrEmpty($VideoStreamMode)) { $VideoStreamMode = "[None]" }
 															$SIPSgR2 += Strip-TrailingCR -DelimitedString $VideoStreamMode
 														}
 														else
@@ -6316,7 +6316,7 @@ begin
 												}
 												else
 												{
-													if (($SIPgroup.IE.IngressSPRMessageTableList -eq '') -and ($SIPgroup.IE.EgressSPRMessageTableList -eq ''))
+													if (([string]::IsNullOrEmpty($SIPgroup.IE.IngressSPRMessageTableList)) -and ([string]::IsNullOrEmpty($SIPgroup.IE.EgressSPRMessageTableList)))
 													{
 														$SipSGTable += ,('Message Manipulation', 'Disabled', '', '')
 													}
@@ -6360,7 +6360,7 @@ begin
 												$SIPGroupRemoteMasks = ($SIPgroup.IE.RemoteMasks).Split(',')
 												for ($i = 0 ; $i -le ($SIPGroupRemoteHosts.Count-1); $i++)
 												{
-													if (($SIPGroupRemoteHosts[$i] -eq '') -and ($SIPGroupRemoteMasks[$i] -eq '')) { continue} #Skip a null entry
+													if (([string]::IsNullOrEmpty($SIPGroupRemoteHosts[$i])) -and ([string]::IsNullOrEmpty($SIPGroupRemoteMasks[$i]))) { continue} #Skip a null entry
 													if  ($SIPGroupRemoteMasks[$i] -eq '')
 													{
 														$SIPGroupFederationIP += $SIPGroupRemoteHosts[$i] + " / <n/a>`n"
@@ -6371,7 +6371,7 @@ begin
 													}
 												}
 												$SIPGroupFederationIP = Strip-TrailingCR -DelimitedString $SIPGroupFederationIP
-												if ($SIPGroupFederationIP -eq '') { $SIPGroupFederationIP = '-- Table is empty --' }
+												if ([string]::IsNullOrEmpty($SIPGroupFederationIP)) { $SIPGroupFederationIP = '-- Table is empty --' }
 												$SIPgroupDescription = Fix-NullDescription -TableDescription $SIPgroup.IE.Description -TableValue $SIPgroup.value -TablePrefix 'SIPREC SG #'
 												#Now build the table:
 												$SIPRecTable += ,('SPAN', 'SIP Recording Table', '' , '')
@@ -6436,7 +6436,7 @@ begin
 												}
 												else
 												{
-													if (($SIPgroup.IE.IngressSPRMessageTableList -eq '') -and ($SIPgroup.IE.EgressSPRMessageTableList -eq ''))
+													if (([string]::IsNullOrEmpty($SIPgroup.IE.IngressSPRMessageTableList)) -and ([string]::IsNullOrEmpty($SIPgroup.IE.EgressSPRMessageTableList)))
 													{
 														$SIPRecTable += ,('Message Manipulation', 'Disabled', '', '')
 													}
@@ -6758,7 +6758,7 @@ begin
 												$CASNumberList		 = [regex]::replace($CASgroup.IE.ChannelOwnNumberList, ',', "`n")
 												$CASHotlineList		= [regex]::replace($CASgroup.IE.FXSHotlineNumberList, ',', "`n")
 												$CASCallForwardingList = [regex]::replace($CASgroup.IE.FXSCallForwardingNumberList, ',', "`n")
-												if ($CASApplyToChannelList -eq '') { $CASApplyToChannelList = '-- Table is empty --' }
+												if ([string]::IsNullOrEmpty($CASApplyToChannelList)) { $CASApplyToChannelList = '-- Table is empty --' }
 												switch ($CasType)
 												{
 													{($_ -eq 'FXS') -or ($_ -eq 'E&M') }
@@ -6869,7 +6869,7 @@ begin
 											'13'	{ $OutputFieldString = $TransferCapabilityLookup.Get_Item($translate.IE.OutputFieldValue)}
 											default { $OutputFieldString = $translate.IE.OutputFieldValue}
 										}
-										if ($translate.IE.Description -eq '')
+										if ([string]::IsNullOrEmpty($translate.IE.Description))
 										{
 											$TranslationDescription = ('Entry ID {0}' -f $translate.value)
 										}
@@ -6960,7 +6960,7 @@ begin
 											'34'	{ $OutputFieldString = ''}
 											default { $OutputFieldString = $transform.IE.OutputFieldValue }
 										}
-										if ($transform.IE.Description -eq '')
+										if ([string]::IsNullOrEmpty($transform.IE.Description))
 										{
 											$TransformationDescription = ('Entry ID {0}' -f $transform.value)
 										}
@@ -7045,7 +7045,7 @@ begin
 												$SgList = 'None'
 												$FirstSg = 'None'
 											}
-											if ($route.IE.Description -eq '')
+											if ([string]::IsNullOrEmpty($route.IE.Description))
 											{
 												$routeDescription = ('Entry ID {0}' -f $route.value)
 											}
@@ -7274,7 +7274,7 @@ begin
 									#This loop saves the underlying tables (if there are any):
 									foreach ($OneTable in $OrderedRouteList)
 									{
-										if ($OneTable  -eq '')
+										if ([string]::IsNullOrEmpty($OneTable ))
 										{
 											# It's empty. (This will be the null entry we initialised the array with
 											continue
@@ -7312,7 +7312,7 @@ begin
 											#We run through each table twice. The first time generates the overview (as a H-table) where the sequence is highlighted.
 											#The second pass then pulls and builds a separate V-table for each of the individual entries
 											#FIRST PASS - this generates the summary H-table
-											if ($TODEntry.IE.Description -eq '')
+											if ([string]::IsNullOrEmpty($TODEntry.IE.Description))
 											{
 												$TODEntryDescription = ('Entry ID {0}' -f $TODEntry.value)
 											}
@@ -7351,7 +7351,7 @@ begin
 									#This loop saves the underlying tables (if there are any):
 									foreach ($OneTable in $TODEntryList)
 									{
-										if ($OneTable  -eq '')
+										if ([string]::IsNullOrEmpty($OneTable ))
 										{
 											# It's empty.
 											continue
@@ -7394,10 +7394,10 @@ begin
 										'7'	 {$ActionConfigActionParameter1 = $ActionSetLookup.Get_Item($ActionConfig.IE.ActionParameter1)}
 										default {$ActionConfigActionParameter1 = $ActionConfig.IE.ActionParameter1}
 									}
-									if ($ActionConfigActionParameter1 -eq '') {$ActionConfigActionParameter1 = '<n/a>' }
-									if ($ActionConfigActionParameter2 -eq '') {$ActionConfigActionParameter2 = '<n/a>' }
-									if ($ActionConfigActionParameter3 -eq '') {$ActionConfigActionParameter3 = '<n/a>' }
-									if ($ActionConfigActionParameter4 -eq '') {$ActionConfigActionParameter4 = '<n/a>' }
+									if ([string]::IsNullOrEmpty($ActionConfigActionParameter1)) {$ActionConfigActionParameter1 = '<n/a>' }
+									if ([string]::IsNullOrEmpty($ActionConfigActionParameter2)) {$ActionConfigActionParameter2 = '<n/a>' }
+									if ([string]::IsNullOrEmpty($ActionConfigActionParameter3)) {$ActionConfigActionParameter3 = '<n/a>' }
+									if ([string]::IsNullOrEmpty($ActionConfigActionParameter4)) {$ActionConfigActionParameter4 = '<n/a>' }
 									$ActionConfigValues = @($ActionConfig.IE.Description, $ActionSetActionLookup.Get_Item($ActionConfig.IE.Action), $ActionConfigActionParameter1, $ActionConfigActionParameter2, $ActionConfigActionParameter3, $ActionConfigActionParameter4)
 									$ActionCollection += ,$ActionConfigValues
 								}
@@ -8105,7 +8105,7 @@ begin
 											#This loop saves the underlying tables (if there are any):
 											foreach ($OneTable in $OrderedMTTableList)
 											{
-												if ($OneTable  -eq '')
+												if ([string]::IsNullOrEmpty($OneTable ))
 												{
 													# It's empty. (This will be the null entry we initialised the array with
 													continue
@@ -8404,7 +8404,7 @@ begin
 											#This loop saves the underlying tables (if there are any):
 											foreach ($OneTable in $OrderedSIPServerTableList)
 											{
-												if ($OneTable -eq '')
+												if ([string]::IsNullOrEmpty($OneTable))
 												{
 													# It's empty. (This will be the null entry we initialised the array with
 													continue
@@ -8970,7 +8970,7 @@ begin
 												$ElementHeaderParamListArray = @()
 
 												$MessageRuleHeading = Fix-NullDescription -TableDescription $MessageRule.IE.Description -TableValue $MessageRule.value -TablePrefix 'Message Rule #'
-												if ($MessageRule.IE.ConditionExpression -eq '')
+												if ([string]::IsNullOrEmpty($MessageRule.IE.ConditionExpression))
 												{
 													$MessageRuleCondExp = 'Always Match'
 												}
@@ -9985,7 +9985,7 @@ begin
 					if ($null -eq $tableContent  ) { continue } #Nothing to write - move on.
 					# The line above was added in 2.6 to trap a problem peculiar to $PSv2.
 					# Changed in v5.0.1 to reverse the test: apparently ($sectionData -eq $null) returns true if ANY element in the array is null - not if the whole thing is.
-					if ($subHeadText -eq '')
+					if ([string]::IsNullOrEmpty($subHeadText))
 					{
 						#Then there's no sub-heading. This is a stand-alone table.
 						$ProgressBar2Text = $H1title
