@@ -1738,7 +1738,7 @@ begin
 			}
 			else
 			{
-				$releaseVersion = [int](($release).Split('.v'))[0] # Turns '6.1.0 v457' into just 6
+				$releaseVersion = [int](($release).Split([char[]]'.v'))[0] # Turns '6.1.0 v457' into just 6
 				$releaseBuild   = [int](($release).Split('v'))[1] # Turns '6.1.0 v457' into just 457
 				write-verbose -message ('System Release  = {0}' -f ($release))
 			}
