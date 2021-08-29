@@ -36,6 +36,7 @@
 					Updated for PowerShell v7 compatibility:
 						- Replaced all tests for "if -eq ''" with 'if ([string]::IsNullOrEmpty...'
 						- Added '[char[]]' to multiple-value '.split()' methods
+					Removed obsolete $NotificationData
 	
 				v9.0.4 15th July 2021
 					Added new bit in 9.0.4:
@@ -9789,7 +9790,6 @@ begin
 							# ---- Notification Manager Config ----------
 							if ($NotificationGroup.name -eq 'NotificationManager')
 							{
-								$NotificationData = @()
 								$NotificationProfiles = $NotificationGroup.GetElementsByTagName('ID')
 								if ($NotificationProfiles.Count -ne 0)
 								{
@@ -9955,7 +9955,6 @@ begin
 			if ($DoAll -or $DoMaint)	{ $Sections += ,('SNMP/Alarms', $SNMPData) }
 			if ($DoAll -or $DoMaint)	{ $Sections += ,('Logging Configuration', $LoggingData) }
 			if ($DoAll -or $DoCalls)	{ $Sections += ,('Emergency Services', $EmergSvcsData) }
-			#if ($DoAll -or $DoCalls)	{ $Sections += ,('Emergency Services', $NotificationData) }
 
 			$sectionCounter = 0
 			foreach ($section in $Sections)
