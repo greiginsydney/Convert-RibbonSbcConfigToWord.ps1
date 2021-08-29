@@ -1810,9 +1810,10 @@ begin
 				}
 
 				#$NodeInfo.GetType()
-				$NodeInfoArray = ($NodeInfo).ToString().Split([environment]::NewLine)
+				$NodeInfoArray = ($NodeInfo).ToString() -Split '[\r\n]'
 				ForEach ($nodeLine in $NodeInfoArray)
 				{
+					if ($nodeLine.length -eq 0) { continue }
 					$TempNode = (($nodeLine).Split(':'))
 					$TempNode0 = $TempNode[0].Trim()
 					if (($TempNode.count -eq 1) -and ($TempNode0 -notmatch 'License Information')) #There's nothing (else) of interest on this line. Read the next one.
