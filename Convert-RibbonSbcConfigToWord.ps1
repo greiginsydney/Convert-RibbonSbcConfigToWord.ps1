@@ -36,6 +36,7 @@
 					Updated for PowerShell v7 compatibility:
 						- Replaced all tests for "if -eq ''" with 'if ([string]::IsNullOrEmpty...'
 						- Added '[char[]]' to multiple-value '.split()' methods
+						- Changed $NodeInfoArray creation from '.split()' to '-split' & added blank line test/continue
 						- Removed reference to [Microsoft.Office.Interop.Word.WdExportCreateBookmarks] enum
 					Removed obsolete $NotificationData
 
