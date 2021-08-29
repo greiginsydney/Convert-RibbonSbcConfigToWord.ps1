@@ -36,15 +36,16 @@
 					Updated for PowerShell v7 compatibility:
 						- Replaced all tests for "if -eq ''" with 'if ([string]::IsNullOrEmpty...'
 						- Added '[char[]]' to multiple-value '.split()' methods
+						- Removed reference to [Microsoft.Office.Interop.Word.WdExportCreateBookmarks] enum
 					Removed obsolete $NotificationData
-	
+
 				v9.0.4 15th July 2021
 					Added new bit in 9.0.4:
 						Added Global Security Options / Test a Call
 
 				v9.0.3 * Not released.
 					- No new functionality, no bugs unearthed.
-					
+
 				v9.0.2 28th January 2021
 					Changed Network Monitoring / Link monitors from h-table to v-table and updated to accommodate new values in 9.0.2
 					Added Protocols / IPSec / Tunnel Table
@@ -1815,7 +1816,7 @@ begin
 				ForEach ($nodeLine in $NodeInfoArray)
 				{
 					if ($nodeLine.length -eq 0) { continue }
-					$TempNode = (($nodeLine).Split(':'))
+					$TempNode = $nodeLine.Split(':')
 					$TempNode0 = $TempNode[0].Trim()
 					if (($TempNode.count -eq 1) -and ($TempNode0 -notmatch 'License Information')) #There's nothing (else) of interest on this line. Read the next one.
 					{
@@ -10187,7 +10188,7 @@ begin
 							write-progress -id 1 -Activity 'Finishing Up' -Status 'Saving as PDF' -PercentComplete (98) # (Near enough...)
 							$PdfOutputFile = ([IO.Path]::ChangeExtension($OutputFile, 'pdf'))
 							write-verbose -message ('Saving as PDF - "{0}"' -f ($PdfOutputFile))
-							$wdCreateBookmarks = [Microsoft.Office.Interop.Word.WdExportCreateBookmarks]::wdExportCreateHeadingBookmarks # 1
+							$wdCreateBookmarks = 1 #[Microsoft.Office.Interop.Word.WdExportCreateBookmarks]::wdExportCreateHeadingBookmarks
 							$WdFixedFormatExtClassPtr = [Type]::Missing
 							# OK, this is a repeat of the same ugly kludge from earlier, but if it doesn't want to Save using '[ref]', let's try again without it:
 							try
