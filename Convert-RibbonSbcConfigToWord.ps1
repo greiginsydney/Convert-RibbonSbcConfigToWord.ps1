@@ -7557,6 +7557,7 @@ begin
 											}
 											$MediaListTable += ,('Dead Call Detection', $ReverseEnabledLookup.Get_Item($MediaListProfile.IE.DeadCallDetection), '', '')
 											$MediaListTable += ,('Silence Suppression', $ReverseEnabledLookup.Get_Item($MediaListProfile.IE.SilenceSuppression), '', '')
+											$MediaListTable += ,('Enforce SG Codec Priority', (Test-ForNull -LookupTable $EnabledLookup -value $MediaListProfile.IE.EnforceCodecPriority), '', '') 
 											if ($MediaListProfile.IE.CryptoProfileID -ne '0')
 											{
 												if ($MediaListProfile.IE.SrtpROC -eq $null)
