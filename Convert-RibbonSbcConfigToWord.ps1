@@ -2917,6 +2917,28 @@ begin
 							}
 						}
 					}
+					# ---- Listen Ports (added in 11.0.0) ----------
+					'ListenProtocolPortList'
+					{
+						$SIPListenPorts = $node.GetElementsByTagName('ID')
+						$AllSIPListenPortData = @()
+						$SIPListenPortColumnTitles = @('Entry', 'Protocol', 'Port', 'TLS Profile')
+						$SIPListenPortCollection = @()
+						if ($SIPListenPorts.Count -ne 0)
+						{
+							ForEach ($SIPListenPort in $SIPListenPorts)
+							{
+								if ($SIPListenPort.IE.classname -eq $null) { continue } # Empty / deleted entry
+								if ($SIPListenPort.IE.classname -eq 'LISTEN_PROTOCOL_PORT_LIST_IE')
+								{
+									$SIPListenPortObject = @($SIPListenPort.Value, $ProtocolLookup.Get_Item($SIPListenPort.IE.ListenProtocol), $SIPListenPort.IE.ListenPort, $TlsProfileIdLookup.Get_Item($SIPListenPort.IE.TLSProfileID))
+									$SIPListenPortCollection += , $SIPListenPortObject
+									$SipListenPortLookup.Add($SIPListenPort.Value, ($ProtocolLookup.Get_Item($SIPListenPort.IE.ListenProtocol) + '-' + $SIPListenPort.IE.ListenPort))
+								}
+							}
+							$AllSIPListenPortData += ,('Listen Port', '', $SIPListenPortColumnTitles, $SIPListenPortCollection)
+						}
+					}
 				}
 			}
 
@@ -6303,15 +6325,31 @@ begin
 												$SipSGTable += ,('SPAN-L','Listen Ports', 'SPAN-R', 'Federated IP/FQDN')
 												#Build the rows here - Listen Ports first
 												$SIPListenList = ''
-												for ($i = 1; $i -le 6; $i++)
+												if ($SIPgroup.IE.SIPListenProtocolPortList -ne $null)
 												{
-													if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
+													#We'll follow the rls 11+ process:
+													$SipSGListenPortList = ($SIPgroup.IE.SIPListenProtocolPortList).Split(',')
+													foreach ($SipSGListenPortListEntry in $SipSGListenPortList)
 													{
-															$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+														$SIPListenList += $SipListenPortLookup.Get_Item($SipSGListenPortListEntry)
+														$SIPListenList += "`n"
 													}
+													$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+													$SipSGTable += ,('Listen Port',  $SIPListenList, '', $SIPGroupFederationIP)
 												}
-												$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
-												$SipSGTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												else
+												{
+													#Legacy:
+													for ($i = 1; $i -le 6; $i++)
+													{
+														if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
+														{
+																$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+														}
+													}
+													$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+													$SipSGTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												}
 												$SipSGTable += ,('SPAN', 'Message Manipulation', '', '')
 												#Are we doing message manipulation?
 												if ($SIPgroup.IE.IngressSPRMessageTableList -eq $null)
@@ -6423,15 +6461,31 @@ begin
 												$SIPRecTable += ,('SPAN-L','Listen Ports', 'SPAN-R', 'Federated IP/FQDN')
 												#Build the rows here - Listen Ports first
 												$SIPListenList = ''
-												for ($i = 1; $i -le 6; $i++)
+												if ($SIPgroup.IE.SIPListenProtocolPortList -ne $null)
 												{
-													if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
+													#We'll follow the rls 11+ process:
+													$SipSGListenPortList = ($SIPgroup.IE.SIPListenProtocolPortList).Split(',')
+													foreach ($SipSGListenPortListEntry in $SipSGListenPortList)
 													{
-															$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+														$SIPListenList += $SipListenPortLookup.Get_Item($SipSGListenPortListEntry)
+														$SIPListenList += "`n"
 													}
+													$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+													$SIPRecTable += ,('Listen Port',  $SIPListenList, '', $SIPGroupFederationIP)
 												}
-												$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
-												$SIPRecTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												else
+												{
+													#Legacy:
+													for ($i = 1; $i -le 6; $i++)
+													{
+														if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
+														{
+																$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+														}
+													}
+													$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+													$SIPRecTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												}
 												$SIPRecTable += ,('SPAN', 'Message Manipulation', '', '')
 												#Are we doing message manipulation?
 												if ($SIPgroup.IE.IngressSPRMessageTableList -eq $null)
@@ -10296,6 +10350,7 @@ process
 	$SIPMessageRuleLookup = @{'0' = 'None';} 		#The names of the SIP Message Manipulation Rule Tables	Referenced by: SIP Servers
 	$SIPMessageRuleElementLookup = @{'0' = 'None';}	#The names of the SIP Msg Rule Element Descriptors	Referenced by: SIP Message Rule Tables
 	$SIPCondRuleLookup = @{}						#The names of the SIP Condition Rule Tables		Referenced SIP Message Rule Tables
+	$SipListenPortLookup = @{}						#The names of the SIP Listen Ports		Referenced by: SIP Signaling Gps
 	$TlsProfileIdLookup = @{'0' = 'N/A';}			#The names of the TLS Profiles			Referenced by: SIP Servers
 	$CertificateLookup = @{'-1000' = '--- No Tables ---';}		#The names of the Certificates	Referenced by: TLS Profiles
 	$SDESMediaCryptoProfileLookup = @{'0' = 'None';}	#The names of the SDES Crypto Profiles		 Referenced by: Media List Profiles
