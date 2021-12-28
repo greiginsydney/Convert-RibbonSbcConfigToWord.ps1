@@ -1222,7 +1222,7 @@ begin
 				{
 					[string] $changelog = 'This version includes: ' + $article.node.changeLog.trim() + "`n`n"
 				}
-				if ($Ga -gt $ScriptVersion)
+				if ([System.Version]$Ga -gt [System.Version]$ScriptVersion)
 				{
 					$wshell = New-Object -ComObject Wscript.Shell -ErrorAction Stop
 					$updatePrompt = $wshell.Popup(("Version {0} is available.`n`n{1}Would you like to download it?" -f ($ga), ($changelog)),0,'New version available',68)
