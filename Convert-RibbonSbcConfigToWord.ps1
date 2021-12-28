@@ -14,9 +14,9 @@
 	It will run with no command-line parameters and assumes default values for the source and destination files.
 
 .NOTES
-	Version				: 9.0.4B
-	Date				: TBA 2021
-	Gateway versions	: 2.1.1 - 9.0.4
+	Version				: 11.0.0
+	Date				: TBA 2022
+	Gateway versions	: 2.1.1 - 11.0.0
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
 
@@ -32,7 +32,20 @@
 
 	Revision History 	:
 
-				v9.0.4B TBA 2021:
+				v11.0.0 TBA January 2022
+					Added new bits in 11.0.0:
+						'Enforce SG Codec Priority' in Media List
+						Added new section 'Listen Port' in SIP
+						Changed how SIP Sig Gps and SIP Recorders display 'Listen Port' info. (If new format is present it will be used, else Legacy)
+					Added [System.Version] declaration in Get-UpdateInfo to prevent issues where '9.0.4' is apparently > '11.0.0'
+
+				v9.0.6 * Not released.
+					- No new functionality, no bugs unearthed.
+
+				v9.0.5 * Not released.
+					- No new functionality, no bugs unearthed.
+
+				v9.0.4B * Not released.
 					Updated for PowerShell v7 compatibility:
 						- Replaced all tests for "if -eq ''" with 'if ([string]::IsNullOrEmpty...'
 						- Added '[char[]]' to multiple-value '.split()' methods
@@ -338,7 +351,7 @@ param(
 begin
 {
 
-	$ScriptVersion = '9.0.4B'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
+	$ScriptVersion = '11.0.0'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
 	$Error.Clear()		  #Clear PowerShell's error variable
 	$Global:Debug = $psboundparameters.debug.ispresent
 
