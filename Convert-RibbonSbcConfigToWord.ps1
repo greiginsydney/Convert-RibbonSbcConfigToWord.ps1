@@ -9979,6 +9979,7 @@ begin
 			$AllSipData += $SIPCondRuleData
 			$AllSipData += $NodeLevelSIPData
 			$AllSipData += $AllSIPRecData
+			$AllSipData += $AllSIPListenPortData
 
 			$AllCallRouting = @()
 			$AllCallRouting += $TransformationData
