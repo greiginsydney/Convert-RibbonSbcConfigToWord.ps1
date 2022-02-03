@@ -37,6 +37,8 @@
 						'Enforce SG Codec Priority' in Media List
 						Added new section 'Listen Port' in SIP
 						Changed how SIP Sig Gps and SIP Recorders display 'Listen Port' info. (If new format is present it will be used, else Legacy)
+					Added new bits in 9.0.7:
+						- Added new RSA-AES-GCM cipher suites for TLS 1.2 interop
 					Added [System.Version] declaration in Get-UpdateInfo to prevent issues where '9.0.4' is apparently > '11.0.0'
 
 				v9.0.6 * Not released.
@@ -542,7 +544,7 @@ begin
 	$RemoteAuthFromURILookup = @{'0' = 'Authentication ID'; '1' = 'Regex'}
 
 	$TlsClientCipherLookup = @{'1' = 'AES128-SHA'; '2' = 'DES-CBC3-SHA'; '3' = 'AES128-SHA, DES-CBC3-SHA'; '4' = 'DES-CBC-SHA'; '5' = 'AES128-SHA, DES-CBC3-SHA, DES-CBC-SHA'}
-	$TlsClientCipherLookupV4 = @{'0' = 'TLS_RSA_WITH_AES128_CBC_SHA'; '1' = 'TLS_RSA_WITH_AES256_CBC_SHA'; '2' = 'TLS_RSA_WITH_3DES_EDE_CBC_SHA'; '3' = 'TLS_RSA_WITH_AES_128_CBC_SHA256'; '4' = 'TLS_RSA_WITH_AES_256_CBC_SHA256'; '5' = 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'; '6' = 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384'; '7' = 'TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA'}
+	$TlsClientCipherLookupV4 = @{'0' = 'TLS_RSA_WITH_AES128_CBC_SHA'; '1' = 'TLS_RSA_WITH_AES256_CBC_SHA'; '2' = 'TLS_RSA_WITH_3DES_EDE_CBC_SHA'; '3' = 'TLS_RSA_WITH_AES_128_CBC_SHA256'; '4' = 'TLS_RSA_WITH_AES_256_CBC_SHA256'; '5' = 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'; '6' = 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384'; '7' = 'TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA'; '9' = 'TLS_ECDHE_RSA_AES128_GCM_SHA256'; '10' = 'TLS_ECDHE_RSA_AES256_GCM_SHA384'}
 	$TlsProtocolLookup = @{'0' = 'TLS 1.2 Only'; '1' = 'TLS 1.0 Only'; '2' = 'TLS 1.0-1.2'}
 	$DTLSHashTypeLookup = @{'1' = 'DTLS_MEDIA_CRYPT0_HASH_SHA1'; '2' = 'DTLS_MEDIA_CRYPTO_HASH_SHA224'; '3' = 'DTLS_MEDIA_CRYPTO_HASH_SHA256'; '4' = 'DTLS_MEDIA_CRYPTO_HASH_SHA384'; '5' = 'DTLS_MEDIA_CRYPTO_HASH_SHA512'; '6' = 'DTLS_MEDIA_CRYPT0_HASH_MD5';}
 	$BadActorTypeLookup = @{'0' = 'Calling Number'; '1' = 'Called Number'; '2' = 'IPv4 Address'; '3' = 'IPv6 Address'}
