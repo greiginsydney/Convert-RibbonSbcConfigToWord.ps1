@@ -2705,7 +2705,7 @@ begin
 						}
 					}
 
-					 #---------- Media  ------------
+					#---------- Media  ------------
 					'Media'
 					{
 						$systemgroups = $node.GetElementsByTagName('Token')
@@ -2963,7 +2963,7 @@ begin
 			#---------------------------------------------------------------------------------------------------------
 			#This is the 'real' run through the XML file, where we extract the remainder of what we need & everything is written to Word
 			#---------------------------------------------------------------------------------------------------------
-			write-verbose -message 'Main	parse of the config file'
+			write-verbose -message 'Main    parse of the config file'
 			write-progress -id 1 -Activity 'Initialising' -Status 'Main parse of the config file' -PercentComplete (8)
 
 			ForEach($node in $config)
@@ -9896,6 +9896,9 @@ begin
 							}
 						}
 					}
+					# ---- Listen Ports (added in 11.0.0) ----------
+					# 'ListenProtocolPortList'
+					# *Should* be here, but for this one I'm pulling the whole shebang in the initial parse. (It's a bit recursive).
 				}
 			}
 
