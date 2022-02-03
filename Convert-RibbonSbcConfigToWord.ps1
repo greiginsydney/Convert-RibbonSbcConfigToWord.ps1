@@ -39,6 +39,7 @@
 						Changed how SIP Sig Gps and SIP Recorders display 'Listen Port' info. (If new format is present it will be used, else Legacy)
 					Added new bits in 9.0.7:
 						- Added new RSA-AES-GCM cipher suites for TLS 1.2 interop
+						- Added new 'Media Codec Latch' in SIP Sig SPs
 					Added [System.Version] declaration in Get-UpdateInfo to prevent issues where '9.0.4' is apparently > '11.0.0'
 
 				v9.0.6 * Not released.
@@ -6213,6 +6214,8 @@ begin
 												}
 												$SIPSgR1 += 'RTCP Multiplexing'
 												$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.RTCPMultiplexing
+												$SIPSgR1 += 'Media Codec Latch'
+												$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.MediaCodecLatch
 												$SIPSgR1 += 'SPAN-R'
 												$SIPSgR2 += 'Mapping Tables'
 												$SIPSgR1 += 'SIP to Q.850 Override Table'
