@@ -15,7 +15,7 @@
 
 .NOTES
 	Version				: 11.0.0
-	Date				: TBA 2022
+	Date				: 4th February 2022
 	Gateway versions	: 2.1.1 - 11.0.0
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
@@ -32,11 +32,12 @@
 
 	Revision History 	:
 
-				v11.0.0 TBA January 2022
+
+				v11.0.0 4th February 2022
 					Added new bits in 11.0.0:
 						- 'Enforce SG Codec Priority' in Media List
 						- New section 'Listen Port' in SIP
-						- Changed how SIP Sig Gps and SIP Recorders display 'Listen Port' info. (If new format is present it will be used, else Legacy)
+						- Changed how SIP Sig Gps and SIP Recorders display 'Listen Port' info. (If new format is present it will be used, else legacy)
 					Added new bits in 9.0.7:
 						- Added new RSA-AES-GCM cipher suites for TLS 1.2 interop
 						- Added new 'Media Codec Latch' in SIP Sig SPs
@@ -2707,7 +2708,6 @@ begin
 							}
 						}
 					}
-
 					#---------- Security ------------
 					'Security'
 					{
@@ -9923,6 +9923,7 @@ begin
 							}
 						}
 					}
+
 					# ---- Listen Ports (added in 11.0.0) ----------
 					# 'ListenProtocolPortList'
 					# *Should* be here, but for this one I'm pulling the whole shebang in the initial parse. (It's a bit recursive).
@@ -10499,8 +10500,8 @@ end
 # SIG # Begin signature block
 # MIIZkAYJKoZIhvcNAQcCoIIZgTCCGX0CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiYnZDvg4kC3IrwSFHiedSN5M
-# 24ugghSeMIIE/jCCA+agAwIBAgIQDUJK4L46iP9gQCHOFADw3TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUCTfjqmzrvgByaGwwPt/+fV6z
+# kMagghSeMIIE/jCCA+agAwIBAgIQDUJK4L46iP9gQCHOFADw3TANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgVGltZXN0YW1waW5nIENBMB4XDTIxMDEwMTAwMDAwMFoXDTMxMDEw
@@ -10615,23 +10616,23 @@ end
 # Z2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBDb2RlIFNpZ25pbmcgQ0ECEAqt2yhVXFSa
 # EiY6y4bT9zkwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAw
 # GQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisG
-# AQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFP7sOfPw8WD8MUsPMIVzaYZJDEjgMA0G
-# CSqGSIb3DQEBAQUABIIBAKQyVcgb1ODWmYKApOjHI9LQIyJFnGhpvaMQzINon14B
-# JWimMzqO4dG9vb7x9Y3JEVfOL8lDda3OTe5DzD1bD6O0FR0xZwfIiRPq6pkiKMHT
-# 6UJFiZgSdjjKj9pXuqEcnB9MLNB9ayWm4kc+oM27q6184l8EhTxR59MiQBQfQm0x
-# 750L0ZnxF/k/G19zcmq1/9D8Puqf5XwGZowx5xr91vR4qmD6I2+uz3D/ekVtc+47
-# uig12Vhevon1V5YZamSFE+5TsWvb7qnlVZpNwmrlsTLcTPJSd943Xblt+jem4gG5
-# OWCmwi7yY6WW9GIVmCNWLvXkTWFBzf9nH/W9khv6XtShggIwMIICLAYJKoZIhvcN
+# AQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFCSY5AZrZFcIhdk8VGmJvRlDAFlRMA0G
+# CSqGSIb3DQEBAQUABIIBAII+3u51WbO4WVAPSQSZ+K6Mw7GU9Z88Tcb2qBDNxslD
+# MONmMnyH47iAvmPVVjAg1bHQjE0v5EOikaKSLojlNyHJMD8ljfkLae4OtBG16MLd
+# lvs8o5cequxmACqMWs9Tn0vQIB5JSgah+3I9pzNOaVIVyHkP1jqP1jDzcPATtIDA
+# nrKUygvZyl2tU4YXmQSoJdL207VusE+5JnMjFCJlB+Uek39EGVQZRRh8WK63Chhc
+# DO+Dy7OxBErcG61/r6iiWahQPWOTuKiPRu3B1SzXa2xXSmsKHDxV89Katk7UEzC1
+# PJ9g9WmkzdK00IB3p/JBcB57ufdDgwE+W7EGqpI6q/ihggIwMIICLAYJKoZIhvcN
 # AQkGMYICHTCCAhkCAQEwgYYwcjELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lD
 # ZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTExMC8GA1UEAxMoRGln
 # aUNlcnQgU0hBMiBBc3N1cmVkIElEIFRpbWVzdGFtcGluZyBDQQIQDUJK4L46iP9g
 # QCHOFADw3TANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0B
-# BwEwHAYJKoZIhvcNAQkFMQ8XDTIxMDcxNTA2MTczN1owLwYJKoZIhvcNAQkEMSIE
-# INRpHqWedOs8c0UgnCKl95I1OCU8B8jWajAo+A2G9a2VMA0GCSqGSIb3DQEBAQUA
-# BIIBALzoQAK9TlWj4VNsUx4GgyfHqI1959vIh2ywVdcvWJM32MX6IWzo2U0yJOlp
-# UwoDSqq9n6q0jFc1OArcKdd8NbkyUrSdpdY1TJJxupCb7wkz6Jl1/pvRvpJuCAI5
-# 9XCvRJFNvbG6K1oSgaHnz+mWhqCh6dMlzcQr7eY4gOCtBTems3uo1ohVMnoYh3fT
-# f9xUr1XmwR8DSSpHi4UMpCMM821kxfXkzYBkGO0HfHO4RJC5cXu9xoFBRxrB4bJT
-# EdMSUQacV5jhbVmWWNUy0Kdl6XycpdAOBP56X+BuVVcNWNFEI9y7vmMcN+vmZM+W
-# ij9uLQwkZrnX+4uyzbACMMVG1No=
+# BwEwHAYJKoZIhvcNAQkFMQ8XDTIyMDIwMzIyMTgxNVowLwYJKoZIhvcNAQkEMSIE
+# IOy3Kvg1OKF1vhzGkYunMmZHUcJG9WMWN2J0E9wcBOyGMA0GCSqGSIb3DQEBAQUA
+# BIIBAIbVMuNDNTf/bBSz7X3kpMEqYMpTebcxdGUI9qNvAvCuktpCkK6g9XFfk/Vx
+# QXuRw+jDphqVaj4RKagszzktHceBlwYOoyeZp6A59UFYX6+wpB871BdjmpBxx430
+# 2rojc03ZIG2z/+zh+FHiCqSQeaTLdXsuAN3++td1+xFRT9YGMtQVK2BQQfMcB84T
+# NtF3TVjmPWM0Sr4M3MF22oRznpqBElCcLuD0+RYhMQJLCp28HdCW7Ug1CRyHP97f
+# RHo9mtTrIVKOz8O9YJhSwsbsFs1eBi+43U1m36Gtk3e+P6tlRwq6BbjvGNrpLCUw
+# hNxzGP7kvrrKq7pbv8bBBqthGjo=
 # SIG # End signature block
