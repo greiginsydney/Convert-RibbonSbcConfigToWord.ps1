@@ -351,7 +351,7 @@ param(
 begin
 {
 
-	$ScriptVersion = '11.0.0'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
+	[System.Version]$ScriptVersion = '11.0.0'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
 	$Error.Clear()		  #Clear PowerShell's error variable
 	$Global:Debug = $psboundparameters.debug.ispresent
 
@@ -1230,15 +1230,15 @@ begin
 				[xml] $xml = (New-Object -TypeName System.Net.WebClient).DownloadString('https://greiginsydney.com/wp-content/version.xml')
 				[Net.ServicePointManager]::SecurityProtocol = $securityProtocolSettingsOriginal #Reinstate original SecurityProtocol settings
 				$article  = select-XML -xml $xml -xpath ("//article[@title='{0}']" -f ($title))
-				[string] $Ga = $article.node.version.trim()
 				if ($article.node.changeLog)
 				{
 					[string] $changelog = 'This version includes: ' + $article.node.changeLog.trim() + "`n`n"
 				}
-				if ([System.Version]$Ga -gt [System.Version]$ScriptVersion)
+				[System.Version]$Ga = $article.node.version.trim()
+				if ($Ga -gt $ScriptVersion)
 				{
 					$wshell = New-Object -ComObject Wscript.Shell -ErrorAction Stop
-					$updatePrompt = $wshell.Popup(("Version {0} is available.`n`n{1}Would you like to download it?" -f ($ga), ($changelog)),0,'New version available',68)
+					$updatePrompt = $wshell.Popup(("Version {0} is available.`n`n{1}Would you like to download it?" -f ($ga.toString()), ($changelog)),0,'New version available',68)
 					if ($updatePrompt -eq 6)
 					{
 						Start-Process -FilePath $article.node.downloadUrl
@@ -1247,16 +1247,16 @@ begin
 					}
 					else
 					{
-						write-verbose -message ('Upgrade to version {0} was declined' -f ($ga))
+						write-verbose -message ('Upgrade to version {0} was declined' -f ($ga.toString()))
 					}
 				}
 				elseif ($Ga -eq $ScriptVersion)
 				{
-					write-verbose -message ('Script version {0} is the latest released version' -f ($Scriptversion))
+					write-verbose -message ('Script version {0} is the latest released version' -f ($Scriptversion.toString()))
 				}
 				else
 				{
-					write-verbose -message ('Script version {0} is newer than the latest released version {1}' -f ($Scriptversion), ($ga))
+					write-verbose -message ('Script version {0} is newer than the latest released version {1}' -f ($Scriptversion.toString()), ($ga.toString()))
 				}
 			}
 			else
