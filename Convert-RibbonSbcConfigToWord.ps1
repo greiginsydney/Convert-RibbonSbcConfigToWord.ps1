@@ -14,9 +14,9 @@
 	It will run with no command-line parameters and assumes default values for the source and destination files.
 
 .NOTES
-	Version				: 9.0.4
-	Date				: 15th July 2021
-	Gateway versions	: 2.1.1 - 9.0.4
+	Version				: 11.0.0
+	Date				: 4th February 2022
+	Gateway versions	: 2.1.1 - 11.0.0
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
 
@@ -31,14 +31,44 @@
 
 
 	Revision History 	:
-	
+
+
+				v11.0.0 4th February 2022
+					Added new bits in 11.0.0:
+						- 'Enforce SG Codec Priority' in Media List
+						- New section 'Listen Port' in SIP
+						- Changed how SIP Sig Gps and SIP Recorders display 'Listen Port' info. (If new format is present it will be used, else legacy)
+					Added new bits in 9.0.7:
+						- Added new RSA-AES-GCM cipher suites for TLS 1.2 interop
+						- Added new 'Media Codec Latch' in SIP Sig SPs
+					Added [System.Version] declaration in Get-UpdateInfo to prevent issues where '9.0.4' is apparently > '11.0.0'
+					Fixed bugs:
+						- Routing table 'call priority' = 'Emergency' was being reported as 'blank' due to incorrect ID in $CRCallPriorityLookup
+
+				v9.0.7 * Not released.
+					- v11 preceeded 9.0.7 due to the staggered versioning of the soft and hard platforms.
+
+				v9.0.6 * Not released.
+					- No new functionality, no bugs unearthed.
+
+				v9.0.5 * Not released.
+					- No new functionality, no bugs unearthed.
+
+				v9.0.4B * Not released.
+					Updated for PowerShell v7 compatibility:
+						- Replaced all tests for "if -eq ''" with 'if ([string]::IsNullOrEmpty...'
+						- Added '[char[]]' to multiple-value '.split()' methods
+						- Changed $NodeInfoArray creation from '.split()' to '-split' & added blank line test/continue
+						- Removed reference to [Microsoft.Office.Interop.Word.WdExportCreateBookmarks] enum
+					Removed obsolete $NotificationData
+
 				v9.0.4 15th July 2021
 					Added new bit in 9.0.4:
 						Added Global Security Options / Test a Call
 
 				v9.0.3 * Not released.
 					- No new functionality, no bugs unearthed.
-					
+
 				v9.0.2 28th January 2021
 					Changed Network Monitoring / Link monitors from h-table to v-table and updated to accommodate new values in 9.0.2
 					Added Protocols / IPSec / Tunnel Table
@@ -330,7 +360,7 @@ param(
 begin
 {
 
-	$ScriptVersion = '9.0.4'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
+	[System.Version]$ScriptVersion = '11.0.0'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
 	$Error.Clear()		  #Clear PowerShell's error variable
 	$Global:Debug = $psboundparameters.debug.ispresent
 
@@ -397,7 +427,7 @@ begin
 
 	$CRMediaModeLookup = @{'0' = 'DSP'; '1' = 'Proxy' ; '2' = 'Proxy preferred over DSP' ; '3' = 'DSP Preferred over Proxy' ; '4' = 'Disabled' ; '5' = 'Direct'} #New descriptions in v4
 	$CRDestinationTypeLookup = @{'0' = 'Normal'; '1' = 'Registrar Table' ; '2' = 'Deny'}
-	$CRCallPriorityLookup = @{'0' = 'Non-Urgent'; '1' = 'Normal'; '2' = 'Urgent'; '4' = 'Emergency'}
+	$CRCallPriorityLookup = @{'0' = 'Non-Urgent'; '1' = 'Normal'; '2' = 'Urgent'; '3' = 'Emergency'}
 	$CRTODLookup = @{'0' = 'Sunday'; '1' = 'Monday' ; '2' = 'Tuesday' ; '3' = 'Wednesday' ; '4' = 'Thursday' ; '5' = 'Friday' ; '6' = 'Saturday'}
 
 	$IsdnSideOrientationLookup = @{'0' = 'User'; '1' = 'Network'}
@@ -521,7 +551,7 @@ begin
 	$RemoteAuthFromURILookup = @{'0' = 'Authentication ID'; '1' = 'Regex'}
 
 	$TlsClientCipherLookup = @{'1' = 'AES128-SHA'; '2' = 'DES-CBC3-SHA'; '3' = 'AES128-SHA, DES-CBC3-SHA'; '4' = 'DES-CBC-SHA'; '5' = 'AES128-SHA, DES-CBC3-SHA, DES-CBC-SHA'}
-	$TlsClientCipherLookupV4 = @{'0' = 'TLS_RSA_WITH_AES128_CBC_SHA'; '1' = 'TLS_RSA_WITH_AES256_CBC_SHA'; '2' = 'TLS_RSA_WITH_3DES_EDE_CBC_SHA'; '3' = 'TLS_RSA_WITH_AES_128_CBC_SHA256'; '4' = 'TLS_RSA_WITH_AES_256_CBC_SHA256'; '5' = 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'; '6' = 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384'; '7' = 'TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA'}
+	$TlsClientCipherLookupV4 = @{'0' = 'TLS_RSA_WITH_AES128_CBC_SHA'; '1' = 'TLS_RSA_WITH_AES256_CBC_SHA'; '2' = 'TLS_RSA_WITH_3DES_EDE_CBC_SHA'; '3' = 'TLS_RSA_WITH_AES_128_CBC_SHA256'; '4' = 'TLS_RSA_WITH_AES_256_CBC_SHA256'; '5' = 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'; '6' = 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384'; '7' = 'TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA'; '9' = 'TLS_ECDHE_RSA_AES128_GCM_SHA256'; '10' = 'TLS_ECDHE_RSA_AES256_GCM_SHA384'}
 	$TlsProtocolLookup = @{'0' = 'TLS 1.2 Only'; '1' = 'TLS 1.0 Only'; '2' = 'TLS 1.0-1.2'}
 	$DTLSHashTypeLookup = @{'1' = 'DTLS_MEDIA_CRYPT0_HASH_SHA1'; '2' = 'DTLS_MEDIA_CRYPTO_HASH_SHA224'; '3' = 'DTLS_MEDIA_CRYPTO_HASH_SHA256'; '4' = 'DTLS_MEDIA_CRYPTO_HASH_SHA384'; '5' = 'DTLS_MEDIA_CRYPTO_HASH_SHA512'; '6' = 'DTLS_MEDIA_CRYPT0_HASH_MD5';}
 	$BadActorTypeLookup = @{'0' = 'Calling Number'; '1' = 'Called Number'; '2' = 'IPv4 Address'; '3' = 'IPv6 Address'}
@@ -779,7 +809,7 @@ begin
 						$column = $i + 2
 					}
 				}
-				if (($value[$i] -eq $null) -or ($value[$i] -eq '')) { continue }
+				if ([string]::IsNullOrEmpty($value[$i])) { continue }
 				$table.cell($row,$column).Range.text = ($value[$i]).ToString() #ToString added as Win10 would crash here unable to cast System.Int32 to System.String.
 				if ($progressBarTitle -ne '')
 				{
@@ -873,7 +903,7 @@ begin
 	function Fix-NullDescription ()
 	{
 		param ([string]$TableDescription , [string]$TableValue, [string]$TablePrefix)
-		if (($TableDescription -eq $null) -or ($TableDescription -eq ''))
+		if ([string]::IsNullOrEmpty($TableDescription))
 		{
 			return ($TablePrefix + $TableValue)
 		}
@@ -1047,7 +1077,7 @@ begin
 	function Convert-RgbToWordColour ()
 	{
 		param ([string] $RGBString, [int32] $DefaultColour)
-		if ($rgbstring -eq '')
+		if ([string]::IsNullOrEmpty($rgbstring))
 		{
 			return $defaultcolour
 		}
@@ -1209,15 +1239,15 @@ begin
 				[xml] $xml = (New-Object -TypeName System.Net.WebClient).DownloadString('https://greiginsydney.com/wp-content/version.xml')
 				[Net.ServicePointManager]::SecurityProtocol = $securityProtocolSettingsOriginal #Reinstate original SecurityProtocol settings
 				$article  = select-XML -xml $xml -xpath ("//article[@title='{0}']" -f ($title))
-				[string] $Ga = $article.node.version.trim()
 				if ($article.node.changeLog)
 				{
 					[string] $changelog = 'This version includes: ' + $article.node.changeLog.trim() + "`n`n"
 				}
+				[System.Version]$Ga = $article.node.version.trim()
 				if ($Ga -gt $ScriptVersion)
 				{
 					$wshell = New-Object -ComObject Wscript.Shell -ErrorAction Stop
-					$updatePrompt = $wshell.Popup(("Version {0} is available.`n`n{1}Would you like to download it?" -f ($ga), ($changelog)),0,'New version available',68)
+					$updatePrompt = $wshell.Popup(("Version {0} is available.`n`n{1}Would you like to download it?" -f ($ga.toString()), ($changelog)),0,'New version available',68)
 					if ($updatePrompt -eq 6)
 					{
 						Start-Process -FilePath $article.node.downloadUrl
@@ -1226,16 +1256,16 @@ begin
 					}
 					else
 					{
-						write-verbose -message ('Upgrade to version {0} was declined' -f ($ga))
+						write-verbose -message ('Upgrade to version {0} was declined' -f ($ga.toString()))
 					}
 				}
 				elseif ($Ga -eq $ScriptVersion)
 				{
-					write-verbose -message ('Script version {0} is the latest released version' -f ($Scriptversion))
+					write-verbose -message ('Script version {0} is the latest released version' -f ($ScriptVersion.toString()))
 				}
 				else
 				{
-					write-verbose -message ('Script version {0} is newer than the latest released version {1}' -f ($Scriptversion), ($ga))
+					write-verbose -message ('Script version {0} is newer than the latest released version {1}' -f ($ScriptVersion.toString()), ($ga.toString()))
 				}
 			}
 			else
@@ -1405,7 +1435,7 @@ begin
 			#First we get a list of the WAVs in the archive, then strip everything to leave the remaining MOH filename
 			$MOHFilename = Extract-FromArchive -Action 'List' -InputFile $InputFile -FileToExtract '*.wav' -ReturnType 'object'
 			$MOHFilename = [regex]::match($MOHFilename, '\.\\moh\\(.*.wav)').Groups[1].Value
-			if ($MOHFilename -eq '') { $MOHFilename = '<No file found>' }
+			if ([string]::IsNullOrEmpty($MOHFilename)) { $MOHFilename = '<No file found>' }
 		}
 		else
 		{
@@ -1474,7 +1504,7 @@ begin
 		write-verbose -message 'Opening the backup file'
 		try
 		{
-			if ($xml -eq '')
+			if ([string]::IsNullOrEmpty($xml))
 			{
 				$xml = [xml] (get-content -Path $InputFile -Encoding UTF8 -ErrorAction stop)
 			}
@@ -1695,7 +1725,7 @@ begin
 			$selection.Style= $wdStyleNormal
 			$selection.TypeText('Created by a PowerShell script from https://greiginsydney.com/uxbuilder')
 			$selection.TypeParagraph()
-			$selection.TypeText(("Version`t{0}" -f $ScriptVersion))
+			$selection.TypeText(("Version`t{0}" -f $ScriptVersion.toString()))
 			if ($DoList -ne '')
 			{
 				$selection.TypeParagraph()
@@ -1724,7 +1754,7 @@ begin
 			[string]$release = $config.'#text'
 
 			$release = [regex]::replace($release, 'v' , ' v') # Add a space between version & build
-			if (($release -eq '') -or ($release -eq $null))	#Early versions (v1.x) don't capture the release
+			if ([string]::IsNullOrEmpty($release))	#Early versions (v1.x) don't capture the release
 			{
 				write-verbose -message 'System Release  = <Not Available>'
 				$release = '<Not Available - too old>'
@@ -1733,7 +1763,7 @@ begin
 			}
 			else
 			{
-				$releaseVersion = [int](($release).Split('.v'))[0] # Turns '6.1.0 v457' into just 6
+				$releaseVersion = [int](($release).Split([char[]]'.v'))[0] # Turns '6.1.0 v457' into just 6
 				$releaseBuild   = [int](($release).Split('v'))[1] # Turns '6.1.0 v457' into just 457
 				write-verbose -message ('System Release  = {0}' -f ($release))
 			}
@@ -1747,7 +1777,7 @@ begin
 
 			if ($platform -eq 'SWe Lite') { $SWeLite = 1 } else { $SWeLite = 0 } # I test for SWeLite SO much it's easier to refer to a boolean
 
-			if (($platform -eq '') -or ($platform -eq $null))	#This was only added with v4.0
+			if ([string]::IsNullOrEmpty($platform))	#This was only added with v4.0
 			{
 				write-verbose -message 'System platform = <Not Available>'
 				$platform = '<Not Available - too old>'
@@ -1805,10 +1835,11 @@ begin
 				}
 
 				#$NodeInfo.GetType()
-				$NodeInfoArray = ($NodeInfo).ToString().Split([environment]::NewLine)
+				$NodeInfoArray = ($NodeInfo).ToString() -Split '[\r\n]'
 				ForEach ($nodeLine in $NodeInfoArray)
 				{
-					$TempNode = (($nodeLine).Split(':'))
+					if ($nodeLine.length -eq 0) { continue }
+					$TempNode = $nodeLine.Split(':')
 					$TempNode0 = $TempNode[0].Trim()
 					if (($TempNode.count -eq 1) -and ($TempNode0 -notmatch 'License Information')) #There's nothing (else) of interest on this line. Read the next one.
 					{
@@ -2151,7 +2182,7 @@ begin
 					},[0]
 				}
 				# Now paste in the last bit:
-				if ($LicenceExpiration -eq '') { $LicenceExpiration = '<Not Available>' }
+				if ([string]::IsNullOrEmpty($LicenceExpiration)) { $LicenceExpiration = '<Not Available>' }
 				if (!$SweLite)
 				{
 					$FeatureLicenceCollection += , @('','', '','') #Blank line separator
@@ -2330,9 +2361,9 @@ begin
 								$SystemNodeLevelData = @()
 								if ($systemgroup.IE.classname -eq 'SYSTEM_SERV_NET_CFG_IE')
 								{
-									if ($NodeInfo -ne '')
+									if (! [string]::IsNullOrEmpty($NodeInfo))
 									{
-										if ($NodeHostname -eq '')
+										if ([string]::IsNullOrEmpty($NodeHostname))
 										{
 											write-warning -Message ("Hostname ""$($NodeHostname)"" from NodeInfo <> hostname ""$($systemgroup.IE.NodeName)"" from symphonyconfig.")
 										}
@@ -2677,8 +2708,31 @@ begin
 							}
 						}
 					}
+					#---------- Security ------------
+					'Security'
+					{
+						$securitygroups = $node.GetElementsByTagName('Token')
+						if ($securitygroups.Count -ne 0)
+						{
+							ForEach ($securitygroup in $securitygroups)
+							{
+								# ---- TLS Profile ----------
+								if ($securitygroup.name -eq 'TLSProfile')
+								{
+									$Tlsprofiles = $securitygroup.GetElementsByTagName('ID')
+									ForEach ($Tlsprofile in $Tlsprofiles)
+									{
+										if ($TlsProfile.IE.classname -eq $null) { continue } # Empty / deleted entry
+										$TlsProfileTable = @()
+										$TlsProfileDescripion = (Fix-NullDescription -TableDescription $TlsProfile.IE.Description -TableValue $TlsProfile.value -TablePrefix 'TLS Profile ID ')
+										$TlsProfileIdLookup.Add($TlsProfile.value, $TlsProfileDescripion)
+									}
+								}
+							}
+						}
+					}
 
-					 #---------- Media  ------------
+					#---------- Media  ------------
 					'Media'
 					{
 						$systemgroups = $node.GetElementsByTagName('Token')
@@ -2908,13 +2962,35 @@ begin
 							}
 						}
 					}
+					# ---- Listen Ports (added in 11.0.0) ----------
+					'ListenProtocolPortList'
+					{
+						$SIPListenPorts = $node.GetElementsByTagName('ID')
+						$AllSIPListenPortData = @()
+						$SIPListenPortColumnTitles = @('Entry', 'Protocol', 'Port', 'TLS Profile')
+						$SIPListenPortCollection = @()
+						if ($SIPListenPorts.Count -ne 0)
+						{
+							ForEach ($SIPListenPort in $SIPListenPorts)
+							{
+								if ($SIPListenPort.IE.classname -eq $null) { continue } # Empty / deleted entry
+								if ($SIPListenPort.IE.classname -eq 'LISTEN_PROTOCOL_PORT_LIST_IE')
+								{
+									$SIPListenPortObject = @($SIPListenPort.Value, $ProtocolLookup.Get_Item($SIPListenPort.IE.ListenProtocol), $SIPListenPort.IE.ListenPort, $TlsProfileIdLookup.Get_Item($SIPListenPort.IE.TLSProfileID))
+									$SIPListenPortCollection += , $SIPListenPortObject
+									$SipListenPortLookup.Add($SIPListenPort.Value, ($ProtocolLookup.Get_Item($SIPListenPort.IE.ListenProtocol) + '-' + $SIPListenPort.IE.ListenPort))
+								}
+							}
+							$AllSIPListenPortData += ,('Listen Port', '', $SIPListenPortColumnTitles, $SIPListenPortCollection)
+						}
+					}
 				}
 			}
 
 			#---------------------------------------------------------------------------------------------------------
 			#This is the 'real' run through the XML file, where we extract the remainder of what we need & everything is written to Word
 			#---------------------------------------------------------------------------------------------------------
-			write-verbose -message 'Main	parse of the config file'
+			write-verbose -message 'Main    parse of the config file'
 			write-progress -id 1 -Activity 'Initialising' -Status 'Main parse of the config file' -PercentComplete (8)
 
 			ForEach($node in $config)
@@ -3019,7 +3095,7 @@ begin
 												if ('Not' -match $ASM_version)
 												{
 													#This bit will only be true if there's no ASM, or we didn't extract from .tar or have -IncludeNodeInfo
-													if (($NetworkAdapter.IE.ifHwAddress -eq '') -or ($NetworkAdapter.IE.ifHwAddress -eq $null)) { continue }
+													if ([string]::IsNullOrEmpty($NetworkAdapter.IE.ifHwAddress)) { continue }
 												}
 											}
 											if ('mgmt1' -match $NetworkAdapter.IE.IfName) { continue } #Skip the Admin port - there's nothing to report.
@@ -3786,7 +3862,7 @@ begin
 														$ACLTable += ,('Precedence', ($ACL.IE.aclPrecedence + ' [1..65535]'), '', '')
 														$ACLTable += ,('Bucket Size', ($ACL.IE.aclBucketSize + ' [0..255]'), '', '')
 														$ACLTable += ,('Fill Rate', ($ACL.IE.aclFillRate + ' [0..25000]'), '', '')
-														if ($ACL.IE.ifName -eq '')
+														if ([string]::IsNullOrEmpty($ACL.IE.ifName))
 														{
 															$ACLTable += ,('Interface Name', 'Any', '', '')
 														}
@@ -3857,7 +3933,7 @@ begin
 											#This loop saves the underlying tables (if there are any):
 											foreach ($OneTable in $OrderedACLTableList)
 											{
-												if ($OneTable -eq '')
+												if ([string]::IsNullOrEmpty($OneTable))
 												{
 													# It's empty. (This will be the null entry we initialised the array with
 													continue
@@ -3980,7 +4056,7 @@ begin
 														$ACLv6Table += ,('Precedence', ($v6ACL.IE.aclPrecedence + ' [1..65535]'), '', '')
 														$ACLv6Table += ,('Bucket Size', ($v6ACL.IE.aclBucketSize + ' [0..255]'), '', '')
 														$ACLv6Table += ,('Fill Rate', ($v6ACL.IE.aclFillRate + ' [0..25000]'), '', '')
-														if ($v6ACL.IE.ifName -eq '')
+														if ([string]::IsNullOrEmpty($v6ACL.IE.ifName))
 														{
 															$ACLv6Table += ,('Interface Name', 'Any', '', '')
 														}
@@ -4051,7 +4127,7 @@ begin
 											#This loop saves the underlying tables (if there are any):
 											foreach ($OneTable in $OrderedACLv6TableList)
 											{
-												if ($OneTable -eq '')
+												if ([string]::IsNullOrEmpty($OneTable))
 												{
 													# It's empty. (This will be the null entry we initialised the array with
 													continue
@@ -4205,7 +4281,7 @@ begin
 									{
 										$DCprofiledcpriority = Test-ForNull -LookupTable $null -value $dcprofile.ie.dcpriority
 									}
-									if ($DCprofile.IE.Description -eq '')
+									if ([string]::IsNullOrEmpty($DCprofile.IE.Description))
 									{
 										$DCDescription = $DCprofile.IE.DomainController
 									}
@@ -4487,7 +4563,7 @@ begin
 								$SystemNodeLevelData = @()
 								if ($systemgroup.IE.classname -eq 'SYSTEM_SERV_NET_CFG_IE')
 								{
-									if ($systemgroup.IE.sysDescription -eq '')
+									if ([string]::IsNullOrEmpty($systemgroup.IE.sysDescription))
 									{
 										Write-AtBookmark -bookmark 'sysDescription' -data '<Not Provided>'
 									}
@@ -4496,7 +4572,7 @@ begin
 										Write-AtBookmark -bookmark 'sysDescription' -data $systemgroup.IE.sysDescription.ToString()
 									}
 
-									if ($systemgroup.IE.sysLocation -eq '')
+									if ([string]::IsNullOrEmpty($systemgroup.IE.sysLocation))
 									{
 										Write-AtBookmark -bookmark 'sysLocation' -data '<Not Provided>'
 									}
@@ -4504,7 +4580,7 @@ begin
 									{
 										Write-AtBookmark -bookmark 'sysLocation' -data $systemgroup.IE.sysLocation.ToString()
 									}
-									if ($systemgroup.IE.sysContact -eq '')
+									if ([string]::IsNullOrEmpty($systemgroup.IE.sysContact))
 									{
 										Write-AtBookmark -bookmark 'sysContact' -data '<Not Provided>'
 									}
@@ -4798,7 +4874,7 @@ begin
 									}
 									else
 									{
-										if (($systemgroup.IE.PrimaryClockRecoveryPort -eq '0.0') -or ($systemgroup.IE.PrimaryClockRecoveryPort -eq ''))
+										if (($systemgroup.IE.PrimaryClockRecoveryPort -eq '0.0') -or ([string]::IsNullOrEmpty($systemgroup.IE.PrimaryClockRecoveryPort)))
 										{
 											$PrimaryClockRecoveryPort   = '<n/a>'
 										}
@@ -4806,7 +4882,7 @@ begin
 										{
 											$PrimaryClockRecoveryPort = $systemgroup.IE.PrimaryClockRecoveryPort
 										}
-										if (($systemgroup.IE.SecondaryClockRecoveryPort -eq '0.0') -or ($systemgroup.IE.SecondaryClockRecoveryPort -eq ''))
+										if (($systemgroup.IE.SecondaryClockRecoveryPort -eq '0.0') -or ([string]::IsNullOrEmpty($systemgroup.IE.SecondaryClockRecoveryPort)))
 										{
 											$SecondaryClockRecoveryPort = '<n/a>'
 										}
@@ -5008,7 +5084,7 @@ begin
 										if ($TlsProfile.IE.classname -eq $null) { continue } # Empty / deleted entry
 										$TlsProfileTable = @()
 										$TlsProfileDescripion = (Fix-NullDescription -TableDescription $TlsProfile.IE.Description -TableValue $TlsProfile.value -TablePrefix 'TLS Profile ID ')
-										$TlsProfileIdLookup.Add($TlsProfile.value, $TlsProfileDescripion)
+										#$TlsProfileIdLookup.Add($TlsProfile.value, $TlsProfileDescripion) - now happens with initial parse
 										#We need to check for some values not present in older firmware:
 										$TlsProfileValidateServerFQDN = Test-ForNull -LookupTable $EnabledLookup -value $TlsProfile.IE.ValidateServerFQDN
 										#Build the table:
@@ -5747,8 +5823,8 @@ begin
 													#It's O-L-D firmware. Each one of up to 6 hosts and masks is a separate element
 													for ($i = 1 ; $i -le 6 ; $i++)
 													{
-														if (($SIPGroup.IE.('RemoteHost' + $i) -eq '') -and ($SIPGroup.IE.('RemoteMask' + $i) -eq '')) { continue } #null entry
-														if ($SIPGroup.IE.('RemoteMask' + $i) -eq '')
+														if ([string]::IsNullOrEmpty(($SIPGroup.IE.('RemoteHost' + $i))) -and ([string]::IsNullOrEmpty($SIPGroup.IE.('RemoteMask' + $i)))) { continue } #null entry
+														if ([string]::IsNullOrEmpty($SIPGroup.IE.('RemoteMask' + $i)))
 														{
 															$SIPGroupFederationIP += $SIPGroup.IE.('RemoteHost' + $i) + " / <n/a>`n"
 														}
@@ -5764,8 +5840,8 @@ begin
 													$SIPGroupRemoteMasks = ($SIPgroup.IE.RemoteMasks).Split(',')
 													for ($i = 0 ; $i -le ($SIPGroupRemoteHosts.Count-1); $i++)
 													{
-														if (($SIPGroupRemoteHosts[$i] -eq '') -and ($SIPGroupRemoteMasks[$i] -eq '')) { continue} #Skip a null entry
-														if ($SIPGroupRemoteMasks[$i] -eq '')
+														if ([string]::IsNullOrEmpty(($SIPGroupRemoteHosts[$i])) -and ([string]::IsNullOrEmpty($SIPGroupRemoteMasks[$i]))) { continue} #Skip a null entry
+														if ([string]::IsNullOrEmpty($SIPGroupRemoteMasks[$i]))
 														{
 															$SIPGroupFederationIP += $SIPGroupRemoteHosts[$i] + " / <n/a>`n"
 														}
@@ -5776,7 +5852,7 @@ begin
 													}
 												}
 												$SIPGroupFederationIP = Strip-TrailingCR -DelimitedString $SIPGroupFederationIP
-												if ($SIPGroupFederationIP -eq '') { $SIPGroupFederationIP = '-- Table is empty --' }
+												if ([string]::IsNullOrEmpty($SIPGroupFederationIP)) { $SIPGroupFederationIP = '-- Table is empty --' }
 												$SIPgroupDescription = Fix-NullDescription -TableDescription $SIPgroup.IE.Description -TableValue $SIPgroup.value -TablePrefix 'SG #'
 												#Now build the table:
 												$SipSGTable += ,('SPAN', 'SIP Signaling Group', '' , '')
@@ -5970,7 +6046,7 @@ begin
 												}
 												$SIPSgL1 += 'Outbound Proxy IP/FQDN'
 												$SIPSgL2 += $SIPgroup.IE.OutboundProxy
-												if (($SIPgroup.IE.ProxyIpVersion -eq $null) -or ($SIPgroup.IE.OutboundProxy -eq ''))
+												if (([string]::IsNullOrEmpty($SIPgroup.IE.ProxyIpVersion -eq $null)) -or ([string]::IsNullOrEmpty($SIPgroup.IE.OutboundProxy)))
 												{
 													# Don't show 'Proxy IP Version'
 												}
@@ -6116,7 +6192,7 @@ begin
 															$VideoStreamMode = ''
 															if ($SIPgroup.IE.VideoProxyMode  -eq '1') { $VideoStreamMode += "Proxy`n"  }
 															if ($SIPgroup.IE.VideoDirectMode -eq '1') { $VideoStreamMode += "Direct`n" }
-															if ($VideoStreamMode -eq '') { $VideoStreamMode = "[None]" }
+															if ([string]::IsNullOrEmpty($VideoStreamMode)) { $VideoStreamMode = "[None]" }
 															$SIPSgR2 += Strip-TrailingCR -DelimitedString $VideoStreamMode
 														}
 														else
@@ -6167,6 +6243,8 @@ begin
 												}
 												$SIPSgR1 += 'RTCP Multiplexing'
 												$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.RTCPMultiplexing
+												$SIPSgR1 += 'Media Codec Latch'
+												$SIPSgR2 += Test-ForNull -LookupTable $EnableLookup -value $SIPgroup.IE.MediaCodecLatch
 												$SIPSgR1 += 'SPAN-R'
 												$SIPSgR2 += 'Mapping Tables'
 												$SIPSgR1 += 'SIP to Q.850 Override Table'
@@ -6294,15 +6372,31 @@ begin
 												$SipSGTable += ,('SPAN-L','Listen Ports', 'SPAN-R', 'Federated IP/FQDN')
 												#Build the rows here - Listen Ports first
 												$SIPListenList = ''
-												for ($i = 1; $i -le 6; $i++)
+												if ($SIPgroup.IE.SIPListenProtocolPortList -ne $null)
 												{
-													if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
+													#We'll follow the rls 11+ process:
+													$SipSGListenPortList = ($SIPgroup.IE.SIPListenProtocolPortList).Split(',')
+													foreach ($SipSGListenPortListEntry in $SipSGListenPortList)
 													{
-															$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+														$SIPListenList += $SipListenPortLookup.Get_Item($SipSGListenPortListEntry)
+														$SIPListenList += "`n"
 													}
+													$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+													$SipSGTable += ,('Listen Port',  $SIPListenList, '', $SIPGroupFederationIP)
 												}
-												$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
-												$SipSGTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												else
+												{
+													#Legacy:
+													for ($i = 1; $i -le 6; $i++)
+													{
+														if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
+														{
+																$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+														}
+													}
+													$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+													$SipSGTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												}
 												$SipSGTable += ,('SPAN', 'Message Manipulation', '', '')
 												#Are we doing message manipulation?
 												if ($SIPgroup.IE.IngressSPRMessageTableList -eq $null)
@@ -6311,7 +6405,7 @@ begin
 												}
 												else
 												{
-													if (($SIPgroup.IE.IngressSPRMessageTableList -eq '') -and ($SIPgroup.IE.EgressSPRMessageTableList -eq ''))
+													if (([string]::IsNullOrEmpty($SIPgroup.IE.IngressSPRMessageTableList)) -and ([string]::IsNullOrEmpty($SIPgroup.IE.EgressSPRMessageTableList)))
 													{
 														$SipSGTable += ,('Message Manipulation', 'Disabled', '', '')
 													}
@@ -6355,7 +6449,7 @@ begin
 												$SIPGroupRemoteMasks = ($SIPgroup.IE.RemoteMasks).Split(',')
 												for ($i = 0 ; $i -le ($SIPGroupRemoteHosts.Count-1); $i++)
 												{
-													if (($SIPGroupRemoteHosts[$i] -eq '') -and ($SIPGroupRemoteMasks[$i] -eq '')) { continue} #Skip a null entry
+													if (([string]::IsNullOrEmpty($SIPGroupRemoteHosts[$i])) -and ([string]::IsNullOrEmpty($SIPGroupRemoteMasks[$i]))) { continue} #Skip a null entry
 													if  ($SIPGroupRemoteMasks[$i] -eq '')
 													{
 														$SIPGroupFederationIP += $SIPGroupRemoteHosts[$i] + " / <n/a>`n"
@@ -6366,7 +6460,7 @@ begin
 													}
 												}
 												$SIPGroupFederationIP = Strip-TrailingCR -DelimitedString $SIPGroupFederationIP
-												if ($SIPGroupFederationIP -eq '') { $SIPGroupFederationIP = '-- Table is empty --' }
+												if ([string]::IsNullOrEmpty($SIPGroupFederationIP)) { $SIPGroupFederationIP = '-- Table is empty --' }
 												$SIPgroupDescription = Fix-NullDescription -TableDescription $SIPgroup.IE.Description -TableValue $SIPgroup.value -TablePrefix 'SIPREC SG #'
 												#Now build the table:
 												$SIPRecTable += ,('SPAN', 'SIP Recording Table', '' , '')
@@ -6414,15 +6508,31 @@ begin
 												$SIPRecTable += ,('SPAN-L','Listen Ports', 'SPAN-R', 'Federated IP/FQDN')
 												#Build the rows here - Listen Ports first
 												$SIPListenList = ''
-												for ($i = 1; $i -le 6; $i++)
+												if ($SIPgroup.IE.SIPListenProtocolPortList -ne $null)
 												{
-													if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
+													#We'll follow the rls 11+ process:
+													$SipSGListenPortList = ($SIPgroup.IE.SIPListenProtocolPortList).Split(',')
+													foreach ($SipSGListenPortListEntry in $SipSGListenPortList)
 													{
-															$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+														$SIPListenList += $SipListenPortLookup.Get_Item($SipSGListenPortListEntry)
+														$SIPListenList += "`n"
 													}
+													$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+													$SIPRecTable += ,('Listen Port',  $SIPListenList, '', $SIPGroupFederationIP)
 												}
-												$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
-												$SIPRecTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												else
+												{
+													#Legacy:
+													for ($i = 1; $i -le 6; $i++)
+													{
+														if ($SIPgroup.IE.('ListenPort_' + $i) -ne '0') #We have a valid entry.
+														{
+																$SIPListenList += ("{0} : {1} : {2}`n" -f $SIPgroup.IE.('ListenPort_' + $i), $ProtocolLookup.Get_Item($SIPgroup.IE.('Protocol_' + $i)), $TlsProfileIDLookup.Get_Item($SIPgroup.IE.('TLSProfileID_' + $i)))
+														}
+													}
+													$SIPListenList = Strip-TrailingCR -DelimitedString $SIPListenList
+													$SIPRecTable += ,('Port : Protocol : TLS Profile ID',  $SIPListenList, '', $SIPGroupFederationIP)
+												}
 												$SIPRecTable += ,('SPAN', 'Message Manipulation', '', '')
 												#Are we doing message manipulation?
 												if ($SIPgroup.IE.IngressSPRMessageTableList -eq $null)
@@ -6431,7 +6541,7 @@ begin
 												}
 												else
 												{
-													if (($SIPgroup.IE.IngressSPRMessageTableList -eq '') -and ($SIPgroup.IE.EgressSPRMessageTableList -eq ''))
+													if (([string]::IsNullOrEmpty($SIPgroup.IE.IngressSPRMessageTableList)) -and ([string]::IsNullOrEmpty($SIPgroup.IE.EgressSPRMessageTableList)))
 													{
 														$SIPRecTable += ,('Message Manipulation', 'Disabled', '', '')
 													}
@@ -6753,7 +6863,7 @@ begin
 												$CASNumberList		 = [regex]::replace($CASgroup.IE.ChannelOwnNumberList, ',', "`n")
 												$CASHotlineList		= [regex]::replace($CASgroup.IE.FXSHotlineNumberList, ',', "`n")
 												$CASCallForwardingList = [regex]::replace($CASgroup.IE.FXSCallForwardingNumberList, ',', "`n")
-												if ($CASApplyToChannelList -eq '') { $CASApplyToChannelList = '-- Table is empty --' }
+												if ([string]::IsNullOrEmpty($CASApplyToChannelList)) { $CASApplyToChannelList = '-- Table is empty --' }
 												switch ($CasType)
 												{
 													{($_ -eq 'FXS') -or ($_ -eq 'E&M') }
@@ -6864,7 +6974,7 @@ begin
 											'13'	{ $OutputFieldString = $TransferCapabilityLookup.Get_Item($translate.IE.OutputFieldValue)}
 											default { $OutputFieldString = $translate.IE.OutputFieldValue}
 										}
-										if ($translate.IE.Description -eq '')
+										if ([string]::IsNullOrEmpty($translate.IE.Description))
 										{
 											$TranslationDescription = ('Entry ID {0}' -f $translate.value)
 										}
@@ -6955,7 +7065,7 @@ begin
 											'34'	{ $OutputFieldString = ''}
 											default { $OutputFieldString = $transform.IE.OutputFieldValue }
 										}
-										if ($transform.IE.Description -eq '')
+										if ([string]::IsNullOrEmpty($transform.IE.Description))
 										{
 											$TransformationDescription = ('Entry ID {0}' -f $transform.value)
 										}
@@ -7040,7 +7150,7 @@ begin
 												$SgList = 'None'
 												$FirstSg = 'None'
 											}
-											if ($route.IE.Description -eq '')
+											if ([string]::IsNullOrEmpty($route.IE.Description))
 											{
 												$routeDescription = ('Entry ID {0}' -f $route.value)
 											}
@@ -7269,7 +7379,7 @@ begin
 									#This loop saves the underlying tables (if there are any):
 									foreach ($OneTable in $OrderedRouteList)
 									{
-										if ($OneTable  -eq '')
+										if ([string]::IsNullOrEmpty($OneTable ))
 										{
 											# It's empty. (This will be the null entry we initialised the array with
 											continue
@@ -7307,7 +7417,7 @@ begin
 											#We run through each table twice. The first time generates the overview (as a H-table) where the sequence is highlighted.
 											#The second pass then pulls and builds a separate V-table for each of the individual entries
 											#FIRST PASS - this generates the summary H-table
-											if ($TODEntry.IE.Description -eq '')
+											if ([string]::IsNullOrEmpty($TODEntry.IE.Description))
 											{
 												$TODEntryDescription = ('Entry ID {0}' -f $TODEntry.value)
 											}
@@ -7346,7 +7456,7 @@ begin
 									#This loop saves the underlying tables (if there are any):
 									foreach ($OneTable in $TODEntryList)
 									{
-										if ($OneTable  -eq '')
+										if ([string]::IsNullOrEmpty($OneTable ))
 										{
 											# It's empty.
 											continue
@@ -7389,10 +7499,10 @@ begin
 										'7'	 {$ActionConfigActionParameter1 = $ActionSetLookup.Get_Item($ActionConfig.IE.ActionParameter1)}
 										default {$ActionConfigActionParameter1 = $ActionConfig.IE.ActionParameter1}
 									}
-									if ($ActionConfigActionParameter1 -eq '') {$ActionConfigActionParameter1 = '<n/a>' }
-									if ($ActionConfigActionParameter2 -eq '') {$ActionConfigActionParameter2 = '<n/a>' }
-									if ($ActionConfigActionParameter3 -eq '') {$ActionConfigActionParameter3 = '<n/a>' }
-									if ($ActionConfigActionParameter4 -eq '') {$ActionConfigActionParameter4 = '<n/a>' }
+									if ([string]::IsNullOrEmpty($ActionConfigActionParameter1)) {$ActionConfigActionParameter1 = '<n/a>' }
+									if ([string]::IsNullOrEmpty($ActionConfigActionParameter2)) {$ActionConfigActionParameter2 = '<n/a>' }
+									if ([string]::IsNullOrEmpty($ActionConfigActionParameter3)) {$ActionConfigActionParameter3 = '<n/a>' }
+									if ([string]::IsNullOrEmpty($ActionConfigActionParameter4)) {$ActionConfigActionParameter4 = '<n/a>' }
 									$ActionConfigValues = @($ActionConfig.IE.Description, $ActionSetActionLookup.Get_Item($ActionConfig.IE.Action), $ActionConfigActionParameter1, $ActionConfigActionParameter2, $ActionConfigActionParameter3, $ActionConfigActionParameter4)
 									$ActionCollection += ,$ActionConfigValues
 								}
@@ -7494,6 +7604,7 @@ begin
 											}
 											$MediaListTable += ,('Dead Call Detection', $ReverseEnabledLookup.Get_Item($MediaListProfile.IE.DeadCallDetection), '', '')
 											$MediaListTable += ,('Silence Suppression', $ReverseEnabledLookup.Get_Item($MediaListProfile.IE.SilenceSuppression), '', '')
+											$MediaListTable += ,('Enforce SG Codec Priority', (Test-ForNull -LookupTable $EnabledLookup -value $MediaListProfile.IE.EnforceCodecPriority), '', '') 
 											if ($MediaListProfile.IE.CryptoProfileID -ne '0')
 											{
 												if ($MediaListProfile.IE.SrtpROC -eq $null)
@@ -8100,7 +8211,7 @@ begin
 											#This loop saves the underlying tables (if there are any):
 											foreach ($OneTable in $OrderedMTTableList)
 											{
-												if ($OneTable  -eq '')
+												if ([string]::IsNullOrEmpty($OneTable ))
 												{
 													# It's empty. (This will be the null entry we initialised the array with
 													continue
@@ -8399,7 +8510,7 @@ begin
 											#This loop saves the underlying tables (if there are any):
 											foreach ($OneTable in $OrderedSIPServerTableList)
 											{
-												if ($OneTable -eq '')
+												if ([string]::IsNullOrEmpty($OneTable))
 												{
 													# It's empty. (This will be the null entry we initialised the array with
 													continue
@@ -8965,7 +9076,7 @@ begin
 												$ElementHeaderParamListArray = @()
 
 												$MessageRuleHeading = Fix-NullDescription -TableDescription $MessageRule.IE.Description -TableValue $MessageRule.value -TablePrefix 'Message Rule #'
-												if ($MessageRule.IE.ConditionExpression -eq '')
+												if ([string]::IsNullOrEmpty($MessageRule.IE.ConditionExpression))
 												{
 													$MessageRuleCondExp = 'Always Match'
 												}
@@ -9783,7 +9894,6 @@ begin
 							# ---- Notification Manager Config ----------
 							if ($NotificationGroup.name -eq 'NotificationManager')
 							{
-								$NotificationData = @()
 								$NotificationProfiles = $NotificationGroup.GetElementsByTagName('ID')
 								if ($NotificationProfiles.Count -ne 0)
 								{
@@ -9813,6 +9923,10 @@ begin
 							}
 						}
 					}
+
+					# ---- Listen Ports (added in 11.0.0) ----------
+					# 'ListenProtocolPortList'
+					# *Should* be here, but for this one I'm pulling the whole shebang in the initial parse. (It's a bit recursive).
 				}
 			}
 
@@ -9916,6 +10030,7 @@ begin
 			$AllSipData += $SIPCondRuleData
 			$AllSipData += $NodeLevelSIPData
 			$AllSipData += $AllSIPRecData
+			$AllSipData += $AllSIPListenPortData
 
 			$AllCallRouting = @()
 			$AllCallRouting += $TransformationData
@@ -9949,7 +10064,6 @@ begin
 			if ($DoAll -or $DoMaint)	{ $Sections += ,('SNMP/Alarms', $SNMPData) }
 			if ($DoAll -or $DoMaint)	{ $Sections += ,('Logging Configuration', $LoggingData) }
 			if ($DoAll -or $DoCalls)	{ $Sections += ,('Emergency Services', $EmergSvcsData) }
-			#if ($DoAll -or $DoCalls)	{ $Sections += ,('Emergency Services', $NotificationData) }
 
 			$sectionCounter = 0
 			foreach ($section in $Sections)
@@ -9980,7 +10094,7 @@ begin
 					if ($null -eq $tableContent  ) { continue } #Nothing to write - move on.
 					# The line above was added in 2.6 to trap a problem peculiar to $PSv2.
 					# Changed in v5.0.1 to reverse the test: apparently ($sectionData -eq $null) returns true if ANY element in the array is null - not if the whole thing is.
-					if ($subHeadText -eq '')
+					if ([string]::IsNullOrEmpty($subHeadText))
 					{
 						#Then there's no sub-heading. This is a stand-alone table.
 						$ProgressBar2Text = $H1title
@@ -10182,7 +10296,7 @@ begin
 							write-progress -id 1 -Activity 'Finishing Up' -Status 'Saving as PDF' -PercentComplete (98) # (Near enough...)
 							$PdfOutputFile = ([IO.Path]::ChangeExtension($OutputFile, 'pdf'))
 							write-verbose -message ('Saving as PDF - "{0}"' -f ($PdfOutputFile))
-							$wdCreateBookmarks = [Microsoft.Office.Interop.Word.WdExportCreateBookmarks]::wdExportCreateHeadingBookmarks # 1
+							$wdCreateBookmarks = 1 #[Microsoft.Office.Interop.Word.WdExportCreateBookmarks]::wdExportCreateHeadingBookmarks
 							$WdFixedFormatExtClassPtr = [Type]::Missing
 							# OK, this is a repeat of the same ugly kludge from earlier, but if it doesn't want to Save using '[ref]', let's try again without it:
 							try
@@ -10289,6 +10403,7 @@ process
 	$SIPMessageRuleLookup = @{'0' = 'None';} 		#The names of the SIP Message Manipulation Rule Tables	Referenced by: SIP Servers
 	$SIPMessageRuleElementLookup = @{'0' = 'None';}	#The names of the SIP Msg Rule Element Descriptors	Referenced by: SIP Message Rule Tables
 	$SIPCondRuleLookup = @{}						#The names of the SIP Condition Rule Tables		Referenced SIP Message Rule Tables
+	$SipListenPortLookup = @{}						#The names of the SIP Listen Ports		Referenced by: SIP Signaling Gps
 	$TlsProfileIdLookup = @{'0' = 'N/A';}			#The names of the TLS Profiles			Referenced by: SIP Servers
 	$CertificateLookup = @{'-1000' = '--- No Tables ---';}		#The names of the Certificates	Referenced by: TLS Profiles
 	$SDESMediaCryptoProfileLookup = @{'0' = 'None';}	#The names of the SDES Crypto Profiles		 Referenced by: Media List Profiles
@@ -10385,8 +10500,8 @@ end
 # SIG # Begin signature block
 # MIIZkAYJKoZIhvcNAQcCoIIZgTCCGX0CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiYnZDvg4kC3IrwSFHiedSN5M
-# 24ugghSeMIIE/jCCA+agAwIBAgIQDUJK4L46iP9gQCHOFADw3TANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUCTfjqmzrvgByaGwwPt/+fV6z
+# kMagghSeMIIE/jCCA+agAwIBAgIQDUJK4L46iP9gQCHOFADw3TANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgVGltZXN0YW1waW5nIENBMB4XDTIxMDEwMTAwMDAwMFoXDTMxMDEw
@@ -10501,23 +10616,23 @@ end
 # Z2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBDb2RlIFNpZ25pbmcgQ0ECEAqt2yhVXFSa
 # EiY6y4bT9zkwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAw
 # GQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisG
-# AQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFP7sOfPw8WD8MUsPMIVzaYZJDEjgMA0G
-# CSqGSIb3DQEBAQUABIIBAKQyVcgb1ODWmYKApOjHI9LQIyJFnGhpvaMQzINon14B
-# JWimMzqO4dG9vb7x9Y3JEVfOL8lDda3OTe5DzD1bD6O0FR0xZwfIiRPq6pkiKMHT
-# 6UJFiZgSdjjKj9pXuqEcnB9MLNB9ayWm4kc+oM27q6184l8EhTxR59MiQBQfQm0x
-# 750L0ZnxF/k/G19zcmq1/9D8Puqf5XwGZowx5xr91vR4qmD6I2+uz3D/ekVtc+47
-# uig12Vhevon1V5YZamSFE+5TsWvb7qnlVZpNwmrlsTLcTPJSd943Xblt+jem4gG5
-# OWCmwi7yY6WW9GIVmCNWLvXkTWFBzf9nH/W9khv6XtShggIwMIICLAYJKoZIhvcN
+# AQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFCSY5AZrZFcIhdk8VGmJvRlDAFlRMA0G
+# CSqGSIb3DQEBAQUABIIBAII+3u51WbO4WVAPSQSZ+K6Mw7GU9Z88Tcb2qBDNxslD
+# MONmMnyH47iAvmPVVjAg1bHQjE0v5EOikaKSLojlNyHJMD8ljfkLae4OtBG16MLd
+# lvs8o5cequxmACqMWs9Tn0vQIB5JSgah+3I9pzNOaVIVyHkP1jqP1jDzcPATtIDA
+# nrKUygvZyl2tU4YXmQSoJdL207VusE+5JnMjFCJlB+Uek39EGVQZRRh8WK63Chhc
+# DO+Dy7OxBErcG61/r6iiWahQPWOTuKiPRu3B1SzXa2xXSmsKHDxV89Katk7UEzC1
+# PJ9g9WmkzdK00IB3p/JBcB57ufdDgwE+W7EGqpI6q/ihggIwMIICLAYJKoZIhvcN
 # AQkGMYICHTCCAhkCAQEwgYYwcjELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lD
 # ZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTExMC8GA1UEAxMoRGln
 # aUNlcnQgU0hBMiBBc3N1cmVkIElEIFRpbWVzdGFtcGluZyBDQQIQDUJK4L46iP9g
 # QCHOFADw3TANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0B
-# BwEwHAYJKoZIhvcNAQkFMQ8XDTIxMDcxNTA2MTczN1owLwYJKoZIhvcNAQkEMSIE
-# INRpHqWedOs8c0UgnCKl95I1OCU8B8jWajAo+A2G9a2VMA0GCSqGSIb3DQEBAQUA
-# BIIBALzoQAK9TlWj4VNsUx4GgyfHqI1959vIh2ywVdcvWJM32MX6IWzo2U0yJOlp
-# UwoDSqq9n6q0jFc1OArcKdd8NbkyUrSdpdY1TJJxupCb7wkz6Jl1/pvRvpJuCAI5
-# 9XCvRJFNvbG6K1oSgaHnz+mWhqCh6dMlzcQr7eY4gOCtBTems3uo1ohVMnoYh3fT
-# f9xUr1XmwR8DSSpHi4UMpCMM821kxfXkzYBkGO0HfHO4RJC5cXu9xoFBRxrB4bJT
-# EdMSUQacV5jhbVmWWNUy0Kdl6XycpdAOBP56X+BuVVcNWNFEI9y7vmMcN+vmZM+W
-# ij9uLQwkZrnX+4uyzbACMMVG1No=
+# BwEwHAYJKoZIhvcNAQkFMQ8XDTIyMDIwMzIyMTgxNVowLwYJKoZIhvcNAQkEMSIE
+# IOy3Kvg1OKF1vhzGkYunMmZHUcJG9WMWN2J0E9wcBOyGMA0GCSqGSIb3DQEBAQUA
+# BIIBAIbVMuNDNTf/bBSz7X3kpMEqYMpTebcxdGUI9qNvAvCuktpCkK6g9XFfk/Vx
+# QXuRw+jDphqVaj4RKagszzktHceBlwYOoyeZp6A59UFYX6+wpB871BdjmpBxx430
+# 2rojc03ZIG2z/+zh+FHiCqSQeaTLdXsuAN3++td1+xFRT9YGMtQVK2BQQfMcB84T
+# NtF3TVjmPWM0Sr4M3MF22oRznpqBElCcLuD0+RYhMQJLCp28HdCW7Ug1CRyHP97f
+# RHo9mtTrIVKOz8O9YJhSwsbsFs1eBi+43U1m36Gtk3e+P6tlRwq6BbjvGNrpLCUw
+# hNxzGP7kvrrKq7pbv8bBBqthGjo=
 # SIG # End signature block
