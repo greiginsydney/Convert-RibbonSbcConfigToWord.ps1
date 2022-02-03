@@ -44,6 +44,9 @@
 					Fixed bugs:
 						- Routing table 'call priority' = 'Emergency' was being reported as 'blank' due to incorrect ID in $CRCallPriorityLookup
 
+				v9.0.7 * Not released.
+					- v11 preceeded 9.0.7 due to the staggered versioning of the soft and hard platforms.
+
 				v9.0.6 * Not released.
 					- No new functionality, no bugs unearthed.
 
@@ -1257,11 +1260,11 @@ begin
 				}
 				elseif ($Ga -eq $ScriptVersion)
 				{
-					write-verbose -message ('Script version {0} is the latest released version' -f ($Scriptversion.toString()))
+					write-verbose -message ('Script version {0} is the latest released version' -f ($ScriptVersion.toString()))
 				}
 				else
 				{
-					write-verbose -message ('Script version {0} is newer than the latest released version {1}' -f ($Scriptversion.toString()), ($ga.toString()))
+					write-verbose -message ('Script version {0} is newer than the latest released version {1}' -f ($ScriptVersion.toString()), ($ga.toString()))
 				}
 			}
 			else
@@ -2728,7 +2731,7 @@ begin
 							}
 						}
 					}
-					
+
 					#---------- Media  ------------
 					'Media'
 					{
