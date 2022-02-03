@@ -75,79 +75,52 @@ PS H:\> Get-ChildItem "d:\path\*.tar" -recurse | .\Convert-RibbonSbcConfigToWord
 
 ### (Read about older versions <a href="https://greiginsydney.com/uxbuilder" target="_blank"> on my blog</a>)
 
-#### v9.0.1 - 7th November 2020
-- Consolidated creation of $SgTableLookup to new combined section in the 'first run' loop, as SigGps now recursively reference themselves for Call Recording
-- Removed redundant Sig Gp type (e.g. '(SIP)') from the start of each SigGp heading
-- Updated Security / TLS Profiles to now show only one instance of Certificate, now under 'Common Attributes'
-- Added new bits in 9.0.0 (SweLite) / 9.0.0 (1k/2k):
-	- 'SIP Recorder' (type) in SIP Server Tables
-	- 'SIP Recording' section in SIP
-	- 'SIP Recording' in SIP Sig Gps
-	- 'E911 Notification Manager' in Emergency Services
-	- Removed Forking from the licences table (as from v9 it's now licenced by default - but still displaying in the 1k/2k version of the table)
-- Fixed bugs / new bits missed previously:
-	- Added 'Drain' to $EnabledLookup & replaced 'Enabled' value with 'customAdminState' in Sig Gps where the latter is present
-	- SIP SigGp was reporting the default $SipGp.IE.Description instead of $SIPgroupDescription. (Only apparent if $SipGp.IE.Description was blank)
-	- Fixed bug where Security / TLS Profiles was showing a blank instead of the SBC certificate name
-
-#### v8.1.5 16th August 2020
-- Added display of SILK licences to the SweLite's System / Licensing / Current Licenses
-- Now reports 'License Expiration' value from nodeinfo.txt for 1k/2k. (Was previously suppressed. I don't know why).
-- Updated label on SweLite's License 'Virtual DSP Sessions' to 'Enhanced Media Sessions with Transcoding'
-- Updated label on SweLite's License 'Proxy RTP <-> SRTP Sessions' to 'Enhanced Media Sessions without Transcoding'
-- Removed test to suppress System / Node Level Settings / Country Level Information if SweLite: it's visible there now
-- SweLite: Removed the 'License Expiration' line from the bottom of the licences table
-- Changed license display: if not licenced, replace any '0' value with 'Not Licensed'
-- Added new bits in 8.1.0 (SweLite) / 8.1.5 (1k/2k):
-    - "Teams Local Media optimization" in SIP Sig Gps
-    - Primary & Secondary Source to System / Node Level Settings / Domain Name Service
+#### v11.0.0 4th February 2022
+- Added new bits in 11.0.0:
+  - 'Enforce SG Codec Priority' in Media List
+  - New section 'Listen Port' in SIP
+  - Changed how SIP Sig Gps and SIP Recorders display 'Listen Port' info. (If new format is present it will be used, else legacy)
+- Added new bits in 9.0.7:
+  - Added new RSA-AES-GCM cipher suites for TLS 1.2 interop
+  - Added new 'Media Codec Latch' in SIP Sig SPs
+- Added [System.Version] declaration in Get-UpdateInfo to prevent issues where '9.0.4' is apparently > '11.0.0'
 - Fixed bugs:
-    - Updated input "$Fullname" to remove array declaration (Tks Mike.)
-    - Some SBCs previously reported two blank lines between feature licences and the expiry, etc footer. Now back to just one.
-    - SIP SigGp: Supported Audio Mode of "Proxy with local SRTP" & Proxy Local SRTP Crypto Profile ID should not show on a 1k/2k. Corrected.
-					
-#### v8.1.0B 18th March 2020
+  - Routing table 'call priority' = 'Emergency' was being reported as 'blank' due to incorrect ID in $CRCallPriorityLookup
 
-- Fixed bug where TT's were no longer arranged alphabetically - broken with the new layout introduced in v8.0.0. (Tks Mike.) 
+#### v9.0.7 * Not released.
+- v11 preceeded 9.0.7 due to the staggered versioning of the soft and hard platforms.
 
-#### v8.1.0 14th March 2020
+#### v9.0.6 * Not released.
+- No new functionality, no bugs unearthed.
 
-- Restructured to support batch processing direct from the pipeline. Added new batch example:<br /> gci *.tar | .\Convert-RibbonSbcConfigToWord.ps1 -SkipUpdateCheck -MakePDF 
+#### v9.0.5 * Not released.
+- No new functionality, no bugs unearthed.
 
-- Added new bits in 8.1.0: 
+#### v9.0.4B * Not released.
+- Updated for PowerShell v7 compatibility:
+  - Replaced all tests for "if -eq ''" with 'if ([string]::IsNullOrEmpty...'
+  - Added '[char[]]' to multiple-value '.split()' methods
+  - Changed $NodeInfoArray creation from '.split()' to '-split' & added blank line test/continue
+  - Removed reference to [Microsoft.Office.Interop.Word.WdExportCreateBookmarks] enum
+- Removed obsolete $NotificationData
 
-    - "Country Code" in System / Node Level Settings 
+#### v9.0.4 15th July 2021
+- Added new bit in 9.0.4:
+  - Added Global Security Options / Test a Call
 
-    - "Bad Actors" table under Settings / Security 
+#### v9.0.3 * Not released.
+- No new functionality, no bugs unearthed.
 
-    - "Explicit Acknowledgement of Pre-Login Info" in Security / Users / Global Security Options 
+#### v9.0.2 28th January 2021
+- Changed Network Monitoring / Link monitors from h-table to v-table and updated to accommodate new values in 9.0.2
+- Added Protocols / IPSec / Tunnel Table
+- Changed some references to '<n/a>' and '<Not Captured>' to '<Not Available>' to reduce ambiguity & increase consistency
+- Now stamps '<Not Available>' into System / Node-Level Settings if the SweLite ID in nodeinfo.txt is blank
+- Fixed bugs:
+  - Fixed bug introduced in 9.0.1 where the lower half of each SIP Server table was skipped. (Bad test of SIP Recorders)
+  - Suppressed display of 'Send STUN Packets' in Media / Media System Configuration for the SweLite
 
-    - "Certificate" in Security / TLS Profiles 
-
-    - "SBC Supplementary Certificates" in Security / SBC Certificates 
-
-    - "SILK" in System / Licensing / Current Licenses 
-
-    - "DC Enabled" in Auth and Directory Services / Acive Directory / Domain Controllers 
-
-- Fixed bugs: 
-
-    - "Lockout duration" was always showing under Security / Users / Global Security Options, even if Number of Failed Logins was set to "No lockout" 
-
-    - Was not correctly handling "SupportsShouldProcess". As resolving this will add a confirm prompt for each iteration (potentially breaking existing workflow), I've opted to disable it 
-
-    - Under System / Node-Level Settings, &lsquo;Power LED' was misspelt 
-
-- Updated label on SIP Sig Sp &lsquo;Outbound Proxy' to now show as &lsquo;Outbound Proxy IP/FQDN' 
-
-#### v8.0.3 * Not released.
-
-- Added display of settings when Security / Users / Global Security Options / Enhanced Password Security = Yes 
-
-#### v8.0.2 * Not released.
-
-- No new functionality, no bugs unearthed. 
-
+<br>&nbsp;
 
 ### Help me improve the script
 
