@@ -41,6 +41,8 @@
 						- Added new RSA-AES-GCM cipher suites for TLS 1.2 interop
 						- Added new 'Media Codec Latch' in SIP Sig SPs
 					Added [System.Version] declaration in Get-UpdateInfo to prevent issues where '9.0.4' is apparently > '11.0.0'
+					Fixed bugs:
+						- Routing table 'call priority' = 'Emergency' was being reported as 'blank' due to incorrect ID in $CRCallPriorityLookup
 
 				v9.0.6 * Not released.
 					- No new functionality, no bugs unearthed.
@@ -421,7 +423,7 @@ begin
 
 	$CRMediaModeLookup = @{'0' = 'DSP'; '1' = 'Proxy' ; '2' = 'Proxy preferred over DSP' ; '3' = 'DSP Preferred over Proxy' ; '4' = 'Disabled' ; '5' = 'Direct'} #New descriptions in v4
 	$CRDestinationTypeLookup = @{'0' = 'Normal'; '1' = 'Registrar Table' ; '2' = 'Deny'}
-	$CRCallPriorityLookup = @{'0' = 'Non-Urgent'; '1' = 'Normal'; '2' = 'Urgent'; '4' = 'Emergency'}
+	$CRCallPriorityLookup = @{'0' = 'Non-Urgent'; '1' = 'Normal'; '2' = 'Urgent'; '3' = 'Emergency'}
 	$CRTODLookup = @{'0' = 'Sunday'; '1' = 'Monday' ; '2' = 'Tuesday' ; '3' = 'Wednesday' ; '4' = 'Thursday' ; '5' = 'Friday' ; '6' = 'Saturday'}
 
 	$IsdnSideOrientationLookup = @{'0' = 'User'; '1' = 'Network'}
