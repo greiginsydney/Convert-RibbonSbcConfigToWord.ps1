@@ -1721,7 +1721,7 @@ begin
 			$selection.Style= $wdStyleNormal
 			$selection.TypeText('Created by a PowerShell script from https://greiginsydney.com/uxbuilder')
 			$selection.TypeParagraph()
-			$selection.TypeText(("Version`t{0}" -f $ScriptVersion))
+			$selection.TypeText(("Version`t{0}" -f $ScriptVersion.toString()))
 			if ($DoList -ne '')
 			{
 				$selection.TypeParagraph()
