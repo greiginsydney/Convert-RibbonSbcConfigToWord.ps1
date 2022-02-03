@@ -34,9 +34,9 @@
 
 				v11.0.0 TBA January 2022
 					Added new bits in 11.0.0:
-						'Enforce SG Codec Priority' in Media List
-						Added new section 'Listen Port' in SIP
-						Changed how SIP Sig Gps and SIP Recorders display 'Listen Port' info. (If new format is present it will be used, else Legacy)
+						- 'Enforce SG Codec Priority' in Media List
+						- New section 'Listen Port' in SIP
+						- Changed how SIP Sig Gps and SIP Recorders display 'Listen Port' info. (If new format is present it will be used, else Legacy)
 					Added new bits in 9.0.7:
 						- Added new RSA-AES-GCM cipher suites for TLS 1.2 interop
 						- Added new 'Media Codec Latch' in SIP Sig SPs
