@@ -2705,6 +2705,30 @@ begin
 						}
 					}
 
+					#---------- Security ------------
+					'Security'
+					{
+						$securitygroups = $node.GetElementsByTagName('Token')
+						if ($securitygroups.Count -ne 0)
+						{
+							ForEach ($securitygroup in $securitygroups)
+							{
+								# ---- TLS Profile ----------
+								if ($securitygroup.name -eq 'TLSProfile')
+								{
+									$Tlsprofiles = $securitygroup.GetElementsByTagName('ID')
+									ForEach ($Tlsprofile in $Tlsprofiles)
+									{
+										if ($TlsProfile.IE.classname -eq $null) { continue } # Empty / deleted entry
+										$TlsProfileTable = @()
+										$TlsProfileDescripion = (Fix-NullDescription -TableDescription $TlsProfile.IE.Description -TableValue $TlsProfile.value -TablePrefix 'TLS Profile ID ')
+										$TlsProfileIdLookup.Add($TlsProfile.value, $TlsProfileDescripion)
+									}
+								}
+							}
+						}
+					}
+					
 					#---------- Media  ------------
 					'Media'
 					{
@@ -5057,7 +5081,7 @@ begin
 										if ($TlsProfile.IE.classname -eq $null) { continue } # Empty / deleted entry
 										$TlsProfileTable = @()
 										$TlsProfileDescripion = (Fix-NullDescription -TableDescription $TlsProfile.IE.Description -TableValue $TlsProfile.value -TablePrefix 'TLS Profile ID ')
-										$TlsProfileIdLookup.Add($TlsProfile.value, $TlsProfileDescripion)
+										#$TlsProfileIdLookup.Add($TlsProfile.value, $TlsProfileDescripion) - now happens with initial parse
 										#We need to check for some values not present in older firmware:
 										$TlsProfileValidateServerFQDN = Test-ForNull -LookupTable $EnabledLookup -value $TlsProfile.IE.ValidateServerFQDN
 										#Build the table:
