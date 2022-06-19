@@ -14,9 +14,9 @@
 	It will run with no command-line parameters and assumes default values for the source and destination files.
 
 .NOTES
-	Version				: 11.0.0
-	Date				: 4th February 2022
-	Gateway versions	: 2.1.1 - 11.0.0
+	Version				: 11.0.1
+	Date				: TBA 2022
+	Gateway versions		: 2.1.1 - 11.0.1
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
 
@@ -32,6 +32,9 @@
 
 	Revision History 	:
 
+				v11.0x TBA 2022
+					Added new bits found recently (thanks Mike):
+						- New transformation types added to $InputFieldLookup & $OutputFieldLookup
 
 				v11.0.0 4th February 2022
 					Added new bits in 11.0.0:
