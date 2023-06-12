@@ -5247,13 +5247,15 @@ begin
 						$LoggingElements = $node.GetElementsByTagName('Token')
 						ForEach($LoggingElement in $LoggingElements)
 						{
-							# ---- Local log configuration (2k only) ----------
-							if (($LoggingElement.name -eq 'WebUI') -and ($platform -eq 'SBC 2000'))
+							# ---- Global log configuration  ----------
+							if ($LoggingElement.name -eq 'WebUI')
 							{
 								if ($LoggingElement.IE.classname -eq $null) { continue } # Empty / deleted entry
 								if ($LoggingElement.IE.classname -eq 'LOGGER_WEBUI_DEST')
 								{
 									$LocalLogServersCollection += , ('Global Log Level', $LogLevelLookup.Get_Item($LoggingElement.IE.DefaultLevel), '', '')
+									$LocalLogServersCollection += , ('Global Date/Time Format', (Test-ForNull -LookupTable $LogDateTimeLookup -value $LoggingElement.IE.LogDateTimeFormat))
+									
 								}
 								$LoggingData += , ('Local Log Configuration', '', '', $LocalLogServersCollection)
 							}
