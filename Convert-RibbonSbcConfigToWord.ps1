@@ -519,7 +519,8 @@ begin
 	$DHCPOptionsToUseLookup = @{'0' = 'All'; '1' = 'IP Address Only'; '2' = 'IP Address and DNS'}
 
 	$PortMirrorDirectionLookup = @{'0' = 'Transmit'; '1' = 'Receive'; '2' = 'Transmit & Receive'}
-	$PortMirrorPortLookup = @{'tap0' = 'DSP'; 'tap1' = 'CPU 1'; 'tap2' = 'CPU 2'; 'tap3' = 'tap3'; 'tap4' = 'tap4'; 'tap5' = 'tap5'; 'tap6' = 'tap6'; 'tap7' = 'tap7'; 'tap8' = 'tap8'; 'tap9' = 'tap9'; 'tap10' = 'tap10'; 'tap11' = 'tap11'; 'tap12' = 'tap12'; 'tap13' = 'tap13'; 'tap14' = 'Ethernet 1'; 'tap15' = 'Ethernet 2'; 'tap16' = 'Ethernet 3'; 'tap17' = 'Ethernet 4'; 'tap18' = 'tap18'; 'tap19' = 'ASM 2' ; 'tap20' = 'ASM 1'}
+	$PortMirrorPortLookup = @{'tap0' = 'DSP'; 'tap1' = 'CPU 1'; 'tap2' = 'CPU 2'; 'tap3' = 'tap3'; 'tap4' = 'tap4'; 'tap5' = 'tap5'; 'tap6' = 'tap6'; 'tap7' = 'tap7'; 'tap8' = 'tap8'; 'tap9' = 'tap9'; 'tap10' = 'tap10'; 'tap11' = 'tap11'; 'tap12' = 'tap12'; 'tap13' = 'tap13'; 'tap14' = 'Ethernet 1'; 'tap15' = 'Ethernet 2'; 'tap16' = 'Ethernet 3'; 'tap17' = 'Ethernet 4'; 'tap18' = 'tap18'; 'tap19' = 'ASM 2' ; 'tap20' = 'ASM 1' ;
+	'sw0' = 'DSP 1'; 'sw1' = 'DSP 2'; 'sw2' = 'Ethernet 1'; 'sw3' = 'Ethernet 2'; 'sw4' = 'ASM'; 'sw5' = 'CPU 1'}
 
 	$MstpInstanceBridgePriorityLookup = @{'0' = '0'; '1' = '4096'; '2' = '8192'; '3' = '12288'; '4' = '16384'; '5' = '20480' ; '6' = '24576'; '7' = '28672'; '8' = '32768'; '9' = '36864'; '10' = '40960'; '11' = '45056'; '12' = '49152'; '13' = '53248'; '14' = '57344'; '15' = '61440'}
 	$BridgeRegionSettingsProtocolLookup = @{'0' = 'MSTP'; '1' = '<Unhandled Value>'; '2' = '<Unhandled Value>' }
