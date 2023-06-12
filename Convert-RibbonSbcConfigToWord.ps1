@@ -8799,6 +8799,15 @@ begin
 												$SipProfilesL2 += $SIPProfile.IE.SessionTimerMin
 												$SipProfilesL1 += 'Offered Session Timer'
 												$SipProfilesL2 += $SIPProfile.IE.SessionTimerExp
+												$SipProfilesL1 += 'Session Timer Offset'
+												if ($SIPProfile.IE.SessionTimerOffset -eq $null)
+												{
+													$SipProfilesL2 += '<n/a this rls>'
+												}
+												else
+												{
+													$SipProfilesL2 += $SIPProfile.IE.SessionTimerOffset
+												}
 												$SipProfilesL1 += 'Terminate on Refresh Failure'
 												$SipProfilesL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPProfile.IE.TerminateOnRefreshFailure
 											}
