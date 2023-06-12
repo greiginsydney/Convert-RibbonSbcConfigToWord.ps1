@@ -5299,7 +5299,62 @@ begin
 											$LoggingSubsystemCollection += , $LoggingSubsystemObject
 										}
 									}
-									$LoggingData += , ('Subsystems', '', $LoggingSubsystemColumnTitles, $LoggingSubsystemCollection)
+									$LoggingData += , ('By Subsystem', '', $LoggingSubsystemColumnTitles, $LoggingSubsystemCollection)
+								}
+							}
+							
+							# ---- LogFilter aka Diagnostic Logging / By Call Criteria ----------
+							if ($LoggingElement.name -eq 'LogFilter')
+							{
+								$ByCallCriteriaTables = $LoggingElement.GetElementsByTagName('ID')
+								if ($ByCallCriteriaTables.Count -ne 0)
+								{
+									ForEach ($ByCallCriteriaTable in $ByCallCriteriaTables)
+									{
+										if ($ByCallCriteriaTable.IE.classname -eq $null) { continue } # Empty / deleted entry
+										if ($ByCallCriteriaTable.IE.classname -eq 'LOGGER_LOG_FILTER_IE')
+										{
+											$CallCriteriaTable = @()
+											$CallCriteriaTable += ,('SPAN-L', 'Call Criteria Table', '', '')
+											$CallCriteriaTableDescription = (Fix-NullDescription -TableDescription $ByCallCriteriaTable.IE.Description -TableValue $ByCallCriteriaTable.value -TablePrefix 'filter #')
+											$CallCriteriaTable += ,('Description', $CallCriteriaTableDescription, '' , '')
+											$CallCriteriaTable += ,('Admin State', (Test-ForNull -LookupTable $EnabledLookup -value $ByCallCriteriaTable.IE.Enabled), '' , '')
+											$CallCriteriaTable += ,('SPAN-L', 'Criteria', '', '')
+											switch ($ByCallCriteriaTable.IE.RuleType)
+											{
+												'0' # Ingress SG
+												{
+													$CallCriteriaTable += ,('Rule type', 'Ingress SG', '', '')
+													$CallCriteriaTable += ,('Signaling Groups', $SgTableLookup.Get_Item($ByCallCriteriaTable.IE.SignalingGroupList), '', '')
+												}
+												
+												'1' # Remote IP
+												{
+													$CallCriteriaTable += ,('Rule type', 'Remote IP', '', '')
+													$CallCriteriaTable += ,('Remote IP', $ByCallCriteriaTable.IE.RemoteIP, '', '')
+												}
+												
+												'2' # Calling Party
+												{
+													$CallCriteriaTable += ,('Rule type', 'Calling Party', '', '')
+													$CallCriteriaTable += ,('Calling Party', $ByCallCriteriaTable.IE.CallingParty, '', '')
+												}
+												
+												'3' # Called Party
+												{
+													$CallCriteriaTable += ,('Rule type', 'Called Party', '', '')
+													$CallCriteriaTable += ,('Called Party', $ByCallCriteriaTable.IE.CalledParty, '', '')
+												}
+												
+												'4' # Nth GCID
+												{
+													$CallCriteriaTable += ,('Rule type', 'Nth GCID', '', '')
+													$CallCriteriaTable += ,('Every Nth GCID', $ByCallCriteriaTable.IE.RandomGCID, '', '')
+												}
+											}
+										}
+										$LoggingData += ,('By Call Criteria', $CallCriteriaTableDescription, '', $CallCriteriaTable)
+									}
 								}
 							}
 						}
