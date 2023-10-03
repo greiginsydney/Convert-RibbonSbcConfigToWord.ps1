@@ -15,13 +15,13 @@ It started life as a way to save the tedium of screen-scraping lots of fixed fra
 
 ## Features
 
-- Decodes SweLite, 1k & 2k gateway versions up to 9.0.1. 
+- Decodes SweLite, 1k & 2k gateway versions up to 12.0.1. 
 
 - Converts and saves the config to a new Word document, and optionally makes a PDF of it too. 
 
 - Doesn't need any Lync PowerShell modules - it's fine on your Win7-Win10 machine (which needs to have Word installed). 
 
-- Tested on Word 2010, 2013 & 2016. 
+- Tested on Word 2010 through 2021 inclusive.
 
 - Reasonably well debugged throughout (although time will tell of course!). 
 
@@ -74,6 +74,26 @@ PS H:\> Get-ChildItem "d:\path\*.tar" -recurse | .\Convert-RibbonSbcConfigToWord
 ## Revision History
 
 ### (Read about older versions <a href="https://greiginsydney.com/uxbuilder" target="_blank"> on my blog</a>)
+
+####  v12.0.1 3rd October 2023
+- Added new bits found recently:
+    - New values to $NumberTypeLookup, and renamed to $ClgNumberTypeLookup
+    - Cloned $NumberTypeLookup to new $CldNumberTypeLookup, as some of the values no longer align between calling and called.
+    - New values to $TransferCapabilityLookup, $NumberingPlanLookup
+    - 'Normal' call type renamed 'Standard' in $CRDestinationTypeLookup & $CRCallPriorityLookup
+    - Added 'Trunk Group' as a Destination Type in call routing table entry, and suppressed display of SigGp and other parameters
+- Fixed bugs:
+    - A Routing Table's top 'H-table' may incorrectly show a value for First Signaling Group when DestinationType is 'Deny' or 'Trunk Group'
+
+#### 		v12.0.0 * Not released.
+- Added new bits in 12.0.0:
+    - 'Global Date/Time Format' in Logging Configuration / Global Log
+    - 'Session Timer Offset' in SIP Profiles. (Appears if Session Timer is 'Enable')
+    - Added 'Diagnostic Logging / By Call Criteria'
+- Added new bits found recently:
+    - New transformation types added to $InputFieldLookup & $OutputFieldLookup (thanks Mike)
+    - Updated Logging Configuration / Global Log to show for all machine types
+    - Added new 1k 'mirrored port' values to $PortMirrorPortLookup
 
 #### v11.0.0 4th February 2022
 - Added new bits in 11.0.0:
