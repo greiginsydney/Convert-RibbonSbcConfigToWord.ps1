@@ -42,6 +42,7 @@
 					Fixed bugs:
 						A Routing Table's top 'H-table' may incorrectly show a value for First Signaling Group when DestinationType is 'Deny' or 'Trunk Group'
 						$Q850DescriptionLookup entries for 23 & 24 contained a rogue space in their index. They would have never shown in any table that specified them
+						SNMP / TCA Config wasn't showing '%' after the value for Logging Partition Usage
 
 				v12.0.0 * Not released.
 					Added new bits in 12.0.0:
@@ -587,7 +588,7 @@ begin
 	$SNMPCategoryLookup = @{'0' = 'None'; '1' = 'Communication'; '2' = 'Equipment'; '3' = 'Processing' ; '4' = 'General'; '5' = 'Environmental'; '6' = 'QOS'; '7' = 'Security'}
 
 	$TCAMonitoredStatisticLookup = @{'0' = '<Unhandled Value>'; '1' = 'TDM Signaling Group Channel Usage'; '2' = 'SIP Call License Usage'; '3' = 'SIP Registrations' ; '4' = 'DSP Usage'; '5' = 'CPU Usage'; '6' = 'Memory Usage'; '7' = 'File Descriptor Usage'; '8' = '1 Minute Load Average'; '9' = '5 Minute Load Average'; '10' = '15 Minute Load Average'; '11' = 'Temporary Partition Usage'; '12' = 'Logging Partition Usage'; '13' = '<Unhandled Value>'; '14' = '<Unhandled Value>'; '15' = '<Unhandled Value>'; '16' = '<Unhandled Value>'; '17' = '<Unhandled Value>'}
-	$TCAMonitoredStatisticValueLookup = @{'0' = ''; '1' = ''; '2' = ''; '3' = '' ; '4' = '%'; '5' = '%'; '6' = '%'; '7' = ''; '8' = ''; '9' = ''; '10' = ''; '11' = '%'; '12' = ''; '13' = ''; '14' = ''; '15' = ''; '16' = ''; '17' = ''}
+	$TCAMonitoredStatisticValueLookup = @{'0' = ''; '1' = ''; '2' = ''; '3' = '' ; '4' = '%'; '5' = '%'; '6' = '%'; '7' = ''; '8' = ''; '9' = ''; '10' = ''; '11' = '%'; '12' = '%'; '13' = ''; '14' = ''; '15' = ''; '16' = ''; '17' = ''}
 
 	$NotificationProviderLookup = @{'0' = 'Kandy'; '1' = '<Unhandled Value>'}
 	$NotificationEventsLookup = @{'0' = 'E911'; '1' = '<Unhandled Value>'}
@@ -10601,8 +10602,8 @@ end
 # SIG # Begin signature block
 # MIIn/gYJKoZIhvcNAQcCoIIn7zCCJ+sCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPk5GezG06lSe+mjSjNNVMyfQ
-# ndmggiEmMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUGRq/TPoWvzbYua7qX4jBQafk
+# 0AiggiEmMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -10784,33 +10785,33 @@ end
 # NDA5NiBTSEEzODQgMjAyMSBDQTECEAb/8zuyozDu5gaz0U556/0wCQYFKw4DAhoF
 # AKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcN
-# AQkEMRYEFBO1k+uT0A1SOd4+9iMBvSkBELrNMA0GCSqGSIb3DQEBAQUABIICAFgm
-# ao+XTK1f4RCKLlSoYcg86fCaj5JxhKuHXTOwOzx2oSChsO8IiVZgzW3U3FYI6Wkf
-# o3sphTYyd5BEgZAOEsPQcK1iiYqwcaGI4aVjkyjaSFXEqYLYVPyAvXDZeY5vCXJe
-# a9Zf9ZE6aW17yxn1BUFd5RjovfJX859OrQaqQLCenlyVEr2WtXzByNzWLFMsmYeU
-# aoZnyaaUOoOI0ySgHeMbTu2ItiQViVhDoD8x2AnsBm4fFwIbsWTvRTykjdz+mgg9
-# Ihf23rrMs8uF6I72Q8it9sX9DV5TNkIDY5t2YOq5Eyz3MQFM5UgAko3/QvVh6Y64
-# CcNjU7lZzaDLpWMnjvgu4DpcahzC/FVc81yGFHCmJ6gjBeLRG6Xa+/wiPA8OHwXT
-# B6g32IMUiBCHxC4LrF7yuEHM0hxWDbY6gL/ea7fgmOfnOHKM3Iv2Y058f0poUjTL
-# RpRDIQP/nQDSZDlox+ioz1H0vbdkqHoh1/vLMXVNBIWhHlpSf9lst6tnuctvPwcj
-# 0ElTqvVPpq+WsAkvZVPExcRfZKCZwAp1vgZuk+5PkhfpXrY/miQjoRnHsEMJkG8j
-# q6VEyzA1SBy98SN3oO6hBOZjmVJnSgKoAT95PpsB8AxXcFswZ1kiry5VnyChR6OY
-# Ut3B0AhphNKwPe21ABeeD/c/EuBpKFp1dPiap57RoYIDIDCCAxwGCSqGSIb3DQEJ
+# AQkEMRYEFI6IfZnGf9acm9PDI78arTre4RncMA0GCSqGSIb3DQEBAQUABIICAMFW
+# E1bvRQJAooFmyxD8DKYpGZR5jYuvNcGwJAdi8ElkIAB3TvwFJNITSCp4XetLcobh
+# aTmDYtHHq9xKU50/bfvWK9aRWddvVrhlg6IK5kMtF2H58qPMGUOCMbXlCUZQlPcL
+# gcTKSJH4kJBz9NEO2USd6aFgufEJFcD+jOY5dEZ1VRuN/AMIFmlm/SfaIAD+lTPb
+# 4PN2wPwyj5RaWrFYmsUZDSI6t1DTDzqlumDJKmHcpzmRxLkVe6FvbUw06eQNcSMo
+# 8qtA1glQ3IpaMtLCZM6uMYaxHJ3NGBIGv64ZEkZYEqihs3b8pEXk6bHQwrwZQ2p/
+# ZZY1MVBU2OfIezsZl3m5zFsAfeXjfCUOZp9jBgQCxSq5EIZMabs8jGMexf+GUJKD
+# XzhFGIBxz38tZdzIerZqwuhi7tWz//tBY0ZA6CVanzE/ErPMATa7qDif+ay4ty3x
+# YWWzrSQo8W+T9ryQVCA32gZAsEkwZeNDavDpvqQ/53fYQssZJIbSmb40rQOU1lux
+# El1H/ipHArhjzG1kbh4QP9ACupltlifLg7cS04sTaJC1Ft+Vjn53A/S07rfZuDLs
+# 3GgrvmeKFIxop3BuJEs5bMA0C02mA/JBUnGRoN1JKgbn3G55EcIaR/pypkG9n7T8
+# Yya0SPc/i7bHcCfQb93Gwxtv3vKwMIdTd7WOhTBAoYIDIDCCAxwGCSqGSIb3DQEJ
 # BjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0
 # LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hB
 # MjU2IFRpbWVTdGFtcGluZyBDQQIQBUSv85SdCDmmv9s/X+VhFjANBglghkgBZQME
 # AgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8X
-# DTIzMTAwMzA3NDIzNlowLwYJKoZIhvcNAQkEMSIEIB9QsNvVJTaag9gWGG7vQu/R
-# zAAkKfezE+F1oRFft2P4MA0GCSqGSIb3DQEBAQUABIICADbdRiZjXwERPtpKDySB
-# tn+2cflFK8kXR7OYzF9So4bNE34T0V57b1cgca+1ifzGdWAdwJ6eNKQm9dYJIyvx
-# Ez+g3pDSuBk/StcEQ1J3tepsVwzUxAUKqQ1pf19r0VuC1iZN59bRz7ze8gbZ3eJz
-# 4y0IhLx6Av0y8Ckko/kF9FzYHBAYlAY/3Ysl+T1n98P+umQ7OLTnRPRxLbDPkFSn
-# p94CyVUY+utqJPydnFKJ+fMnwmEAMKhQB10B8GZ2fW+6AlLeNM1GueWLTmeOUzL9
-# N21n5HN/vfoou76yyaojv1iC3jMcTP375npRXNpb88lZTCWOqpSlyo5q8/wo0Yv9
-# LnPVcgdyxO5mWyDipqq28scgJ3WaEVAFFy0bp5ze4C97Y9QJCR8iBZkg+/FDyGJb
-# 7RmQtUgOe9rXj/Fb2r5hCcoi6NaRvyFnzrDTSC/P+18h24NEWzF9S86M9Vp4tD05
-# dRN5N+iJi5fADyKp2CfeUtJDM5L6wHXkRd5QsL/wvgrxHoKeW7+By2CsYguBiIqe
-# SwvPWxSMfeplXhPyhIK86H4UE9Dzj+5T5zE0JS07WxVhQ8OYqdmCO48fQiRn2G7B
-# 6R0BBY0z2k8vcGmp20JNFzfIfzz7kCT1SxMW6QeyOkmEfrM1XYrel2nRLuikUBdv
-# stmHvqtZN7ZvBC9ArVKUJNMG
+# DTIzMTAwMzA3NTA0MVowLwYJKoZIhvcNAQkEMSIEIBQae3asdFBVCvTqZRZtMJgS
+# iWEgH9sBuXU+FSuNNXyHMA0GCSqGSIb3DQEBAQUABIICAFFVEPZNrS3JBi2thA4K
+# xRu4eEsuhpYN5Aq/gho6B/atahhj49SvgrkBqau5TDoW6PZufePl8/RjBDUCeh8Y
+# f5dU7UqI+boR6QI9lws60OzbX0juNnq1eWvvTZC+XaXoE1AjmLCEfOFSNhRJ0GhU
+# PMu/ITG6VUrZeXgupMoh6LMOoCNiMd/GjLIvJZg9n8U+aBujrL0o/GAim0ZBkNbG
+# fxQQj4NbX1NjAKnHLHb+RZlZhQ/bxWkq7yaD8i8msmOdMuYGBdXytpb/k1patdo4
+# cGwWh1W/6vPxDGdRqZSPWLROwA9AE4BYZ6+yzYFAZxRtvjQEtdzFfUDfRl2xHRr8
+# gonyYQ5mSLs1Z8XOGvEzex3zTInHsZ/kidms8ENxunqbEpdUIeCT/WOh7G7Nu1ki
+# DkyuxZo65q+pKSP9zDwMYYrnIoz9LDj8M+Djaks++ekh6jf7Ml0/sRa0VS78FB+f
+# MYqFKXozS+vcAN7rVXxc9+LeRz+9a1ywHpuQVRhXw6tTZ8lzm3kCCVfyPXP+bQlj
+# zDZrlQg20xFFxE/ssdwf8sEfurZpmOdEgdTu3hv1OKXs1i6xWODADUGyRTcEQsUs
+# wA4w2KjTpL2hIgCf6DFxuhHJEwlWprItKbBzrhx0rffRsZdW9qbf5I9E4iXkOi2l
+# HZNRo3il7G7oAg/ldoIZ2yRA
 # SIG # End signature block
