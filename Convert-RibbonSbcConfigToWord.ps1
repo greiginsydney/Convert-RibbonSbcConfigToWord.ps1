@@ -41,6 +41,7 @@
 						Added 'Trunk Group' as a Destination Type in call routing table entry, and suppressed display of SigGp and other parameters
 					Fixed bugs:
 						A Routing Table's top 'H-table' may incorrectly show a value for First Signaling Group when DestinationType is 'Deny' or 'Trunk Group'
+						$Q850DescriptionLookup entries for 23 & 24 contained a rogue space in their index. They would have never shown in any table that specified them
 
 				v12.0.0 * Not released.
 					Added new bits in 12.0.0:
@@ -494,11 +495,11 @@ begin
 		'483' = '483 - Too Many Hops'; '484' = '484 - Address Incomplete'; '485' = '485 - Ambiguous'; '486' = '486 - Busy Here'; '487' = '487 - Request Terminated'; '488' = '488 - Not Acceptable Here'; '491' = '491 - Request Pending'; '493' = '493 - Undecipherable'; '500' = '500 - Server Internal Error'; '501' = '501 - Not Implemented'; '502' = '502 - Bad Gateway'; '503' = '503 - Service Unavailable';`
 		'504' = '504 - Server Time-out'; '505' = '505 - Version Not Supported'; '513' = '513 - Message Too Large'; '580' = '580 - Precondition Failure';  '600' = '600 - Busy Everywhere'; '603' = '603 - Decline'; '604' = '604 - Does Not Exist Anywhere'; '606' = '606 - Not Acceptable'}
 	$Q850DescriptionLookup = @{'1' = '1: Unallocated Number'; '2' = '2: No Route To Transit Network'; '3' = '3: No Route To Destination'; '4' = '4: Send Special Information Tone'; '5' = '5: Misdialed Trunk Prefix'; '6' = '6: Channel Unacceptable'; '7' = '7: Call Awarded in Established Channel'; '8' = '8: Preemption'; '9' = '9: Preemption - Circuit Reserved for Reuse'; '10' = '10: Normal Call Clearing';`
-		'14' = '14: QoR: Ported Number'; '16' = '16: Normal Call Clearing'; '17' = '17: User Busy'; '18' = '18: No User Responding'; '19' = '19: No Answer from User (user alerted)'; '20' = '20: Subscriber Absent'; '21' = '21: Call Rejected'; '22' = '22: Number Changed'; '23 ' = '23: Redirection to New Destination'; '24 ' = '24: Call Rejected due to Feature at the Destination'; '25' = '25: Exchange Routing Error';`
+		'14' = '14: QoR: Ported Number'; '16' = '16: Normal Call Clearing'; '17' = '17: User Busy'; '18' = '18: No User Responding'; '19' = '19: No Answer from User (user alerted)'; '20' = '20: Subscriber Absent'; '21' = '21: Call Rejected'; '22' = '22: Number Changed'; '23' = '23: Redirection to New Destination'; '24' = '24: Call Rejected due to Feature at the Destination'; '25' = '25: Exchange Routing Error';`
 		'26' = '26: Non-selected User Clearing'; '27' = '27: Destination Out of Order'; '28' = '28: Invalid Number Format (addr incomplete)'; '29' = '29: Facility Rejected'; '30' = '30: Response to STATUS INQUIRY'; '31' = '31: Normal, Unspecified'; '34' = '34: No Circuit/Channel Available'; '38' = '38: Network Out of Order'; '39' = '39: Permanent Frame Mode Connection OoS';`
 		'40' = '40: Permanent Frame Mode Connection Oper'; '41' = '41: Temporary Failure'; '42' = '42: Switching Equipment Congestion'; '43' = '43: Access Information Discarded'; '44' = '44: Requested Circuit/Channel N/A'; '46' = '46: Precedence Call Blocked'; '47' = '47: Resource Unavailable, Unspecified'; '49' = '49: Quality of Service Not Available'; '50' = '50: Requested Facility Not Subscribed';`
 		'53' = '53: Outgoing Calls Barred Within CUG'; '55' = '55: Incoming Calls Barred Within CUG'; '57' = '57: Bearer Capability Not Authorized'; '58' = '58: Bearer Capability Not Available'; '62' = '62: Inconsistency in Outgoing IE'; '63' = '63: Service or Option N/A, unspecified'; '65' = '65: Bearer Capability Not Implemented'; '66' = '66: Channel Type Not Implemented'; '69' = '69: Requested Facility Not Implemented';`
-		'70' = '70: Only Restricted Digital Bearer Cap Supported'; '79' = '79: Service or Option not Implemented, Unspecified'; '81' = '81: Invalid Call Reference Value'; '82' = '82: Identified Channel Does Not Exist'; '83' = '83: Call Exists, but Call Identity Does Not'; '84' = '84: Call Identity in User'; '85' = '85: No Call Suspended'; '86' = '86: Call eith Requested Call Identity has Cleared';`
+		'70' = '70: Only Restricted Digital Bearer Cap Supported'; '79' = '79: Service or Option not Implemented, Unspecified'; '81' = '81: Invalid Call Reference Value'; '82' = '82: Identified Channel Does Not Exist'; '83' = '83: Call Exists, but Call Identity Does Not'; '84' = '84: Call Identity in User'; '85' = '85: No Call Suspended'; '86' = '86: Call with Requested Call Identity has Cleared';`
 		'87' = '87: User Not Member of CUG'; '88' = '88: Incompatible Destination';	'90' = '90: Non-Existent CUG'; '91' = '91: Invalid Transit Network Selection'; '95' = '95: Invalid Message, Unspecified'; '96' = '96: Mandatory Information Element is Missing'; '97' = '97: Message Type Non-existent / Not Implemented'; '98' = '98: Message Incompatible With Call State or Message Type';`
 		'99' = '99: IE/Parameter Non-existent or Not Implemented'; '100' = '100: Invalid Information Element Contents'; '101' = '101: Message Not Compatible with Call State'; '102' = '102: Recovery on Timer Expiry'; '103' = '103: Parameter Non-existent / Not Implemented, Passed On'; '110' = '110: Message With Unrecognized Parameter, Discarded'; '111' = '111: Protocol Error, Unspecified'; '127' = '127: Interworking, Unspecified'}
 
@@ -10600,8 +10601,8 @@ end
 # SIG # Begin signature block
 # MIIn/gYJKoZIhvcNAQcCoIIn7zCCJ+sCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQULT2h2m8DVrTSM+RFKZg2bQXw
-# PemggiEmMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPk5GezG06lSe+mjSjNNVMyfQ
+# ndmggiEmMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -10783,33 +10784,33 @@ end
 # NDA5NiBTSEEzODQgMjAyMSBDQTECEAb/8zuyozDu5gaz0U556/0wCQYFKw4DAhoF
 # AKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcN
-# AQkEMRYEFPWS5tqm+V0x+ESDjEtYKYpu/iccMA0GCSqGSIb3DQEBAQUABIICAKei
-# /Cft5DD230SKhY3gdSZxyo/X+eEgcIChSFj4Z/L/AVtPZNJ9I5a/t+g7RaHUpvcX
-# mv8cva/NwY2f8WUB3gwg171N1x0c7disi/BB5bcHnALw+DdD4bD3cUwo1btzWyIJ
-# umGGx7exRiDOd18w5TzYfkGcnW7clYyvcj3nPE0L0W4lTeMm7BZCJfa0kBaTvT8F
-# HbMy6F+MJ2hj4IiGWuMH9AVSQcK9Cxtyw8Cis4gwv0IVMRemYayyPDzCGtsFkVf9
-# 2b6E2ngCX/wNYhLQ3q++qSHgj8gCrmI4NHvPOFWpwH+ZSiQo7UXXxpfwP2h9pfYK
-# oxy+l7478+eVNH6tFukTMhoTk8a3R4FdFmGq1h/+yhST04W621HkXHaqwa2mXheW
-# hiNDTXBv5WM+owqJmrWzzil0xZswzI7iQf/ZlVIGp1witCeuo7n7yR7XwI9YAJm7
-# stvVaVPAYIJ9qvT6vvgZwD815BtIq2t77h2D/U9RlEVsHf102ekY1jKIwGGqKIZn
-# iLdVApycM9kKlo3OZEqqC3oHZjmnHpDURR6mBTj4Ygd7u423k0UuUOYsxjhbCTyL
-# OBhgF1hBgNUizdwKzPlvqaO7Cq0IHN63TxpSDiSgD6+nm8RLlQ3OPwVpVEMmntFU
-# LtBhcCI3XJSj90JGBIJy5K4mYWBDLw3s8KnUO54ToYIDIDCCAxwGCSqGSIb3DQEJ
+# AQkEMRYEFBO1k+uT0A1SOd4+9iMBvSkBELrNMA0GCSqGSIb3DQEBAQUABIICAFgm
+# ao+XTK1f4RCKLlSoYcg86fCaj5JxhKuHXTOwOzx2oSChsO8IiVZgzW3U3FYI6Wkf
+# o3sphTYyd5BEgZAOEsPQcK1iiYqwcaGI4aVjkyjaSFXEqYLYVPyAvXDZeY5vCXJe
+# a9Zf9ZE6aW17yxn1BUFd5RjovfJX859OrQaqQLCenlyVEr2WtXzByNzWLFMsmYeU
+# aoZnyaaUOoOI0ySgHeMbTu2ItiQViVhDoD8x2AnsBm4fFwIbsWTvRTykjdz+mgg9
+# Ihf23rrMs8uF6I72Q8it9sX9DV5TNkIDY5t2YOq5Eyz3MQFM5UgAko3/QvVh6Y64
+# CcNjU7lZzaDLpWMnjvgu4DpcahzC/FVc81yGFHCmJ6gjBeLRG6Xa+/wiPA8OHwXT
+# B6g32IMUiBCHxC4LrF7yuEHM0hxWDbY6gL/ea7fgmOfnOHKM3Iv2Y058f0poUjTL
+# RpRDIQP/nQDSZDlox+ioz1H0vbdkqHoh1/vLMXVNBIWhHlpSf9lst6tnuctvPwcj
+# 0ElTqvVPpq+WsAkvZVPExcRfZKCZwAp1vgZuk+5PkhfpXrY/miQjoRnHsEMJkG8j
+# q6VEyzA1SBy98SN3oO6hBOZjmVJnSgKoAT95PpsB8AxXcFswZ1kiry5VnyChR6OY
+# Ut3B0AhphNKwPe21ABeeD/c/EuBpKFp1dPiap57RoYIDIDCCAxwGCSqGSIb3DQEJ
 # BjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0
 # LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hB
 # MjU2IFRpbWVTdGFtcGluZyBDQQIQBUSv85SdCDmmv9s/X+VhFjANBglghkgBZQME
 # AgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8X
-# DTIzMTAwMzA0MTQwN1owLwYJKoZIhvcNAQkEMSIEIO2LkiWp+1yauV+eyoQeFeO6
-# pnbTBtU0eKjNvdvYPKyMMA0GCSqGSIb3DQEBAQUABIICACNFQWJdUCuK2fl8eStx
-# I3YiU8t/oi8JnXgVTukrmnYqhz/4sRXJdLGWxcnZ9WFiIoJMiz+fcC4eV+VvRKuc
-# XcU4Iuo+x0gh4E4LofeXoJ8Lz71PuJC+YKzyH8l0sxL0jZkEXwL/BLZYmgDrJQqb
-# Mhddx+NTCLlRkqeXNYeXqibQtm9oeHM29DL4hByYw0jAuicuiW/ij9wQAgHZBOsV
-# YQITt9bmWWAkZ2ixhJPSRau+x92gDcCGWyfsMqhvnoCx9v9b0/e48hB8eboGmrbN
-# yoQJPKhRajTGSiIT1TLcIftWOA2d5iOg4a4/rgRT0/N6tXgpFdgp7xHUboMwxXoc
-# wwopblHyqcsEOMza3B+fI/cZXJF+qz0oOd+FgFCl2qyJahYoZcNMb5K/ceUruo6g
-# +jl3VD35/+oSUQYCN1eqmsjj55yrTb9xbOy/VtlhOJPmQWNdo7NgTMqCXOZh/6c+
-# 4nBsDYZiv5NZZICmHJZjPYSmG9Ye9e4mceK/k3AM1hRn1DvcBaNc6j9F1qQuf0/c
-# dIxDpOEsnOcXEaTNKDnaiJZpkhgQ+vW4kJqwUrUq6oVmaaYfMMWaZzkg5MksVrDl
-# gNxIG3ZeVWtLwiVggQPMQn8myn6bqV1EcEAcr7tAIaostKA4DgX+mtZJTMcOy7D6
-# Fap2w1Imh4cU85sU9EkK1jUe
+# DTIzMTAwMzA3NDIzNlowLwYJKoZIhvcNAQkEMSIEIB9QsNvVJTaag9gWGG7vQu/R
+# zAAkKfezE+F1oRFft2P4MA0GCSqGSIb3DQEBAQUABIICADbdRiZjXwERPtpKDySB
+# tn+2cflFK8kXR7OYzF9So4bNE34T0V57b1cgca+1ifzGdWAdwJ6eNKQm9dYJIyvx
+# Ez+g3pDSuBk/StcEQ1J3tepsVwzUxAUKqQ1pf19r0VuC1iZN59bRz7ze8gbZ3eJz
+# 4y0IhLx6Av0y8Ckko/kF9FzYHBAYlAY/3Ysl+T1n98P+umQ7OLTnRPRxLbDPkFSn
+# p94CyVUY+utqJPydnFKJ+fMnwmEAMKhQB10B8GZ2fW+6AlLeNM1GueWLTmeOUzL9
+# N21n5HN/vfoou76yyaojv1iC3jMcTP375npRXNpb88lZTCWOqpSlyo5q8/wo0Yv9
+# LnPVcgdyxO5mWyDipqq28scgJ3WaEVAFFy0bp5ze4C97Y9QJCR8iBZkg+/FDyGJb
+# 7RmQtUgOe9rXj/Fb2r5hCcoi6NaRvyFnzrDTSC/P+18h24NEWzF9S86M9Vp4tD05
+# dRN5N+iJi5fADyKp2CfeUtJDM5L6wHXkRd5QsL/wvgrxHoKeW7+By2CsYguBiIqe
+# SwvPWxSMfeplXhPyhIK86H4UE9Dzj+5T5zE0JS07WxVhQ8OYqdmCO48fQiRn2G7B
+# 6R0BBY0z2k8vcGmp20JNFzfIfzz7kCT1SxMW6QeyOkmEfrM1XYrel2nRLuikUBdv
+# stmHvqtZN7ZvBC9ArVKUJNMG
 # SIG # End signature block
