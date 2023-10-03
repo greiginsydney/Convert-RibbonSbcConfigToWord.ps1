@@ -14,9 +14,9 @@
 	It will run with no command-line parameters and assumes default values for the source and destination files.
 
 .NOTES
-	Version				: 11.0.0
-	Date				: 4th February 2022
-	Gateway versions	: 2.1.1 - 11.0.0
+	Version				: 12.0.1
+	Date				: 3rd October 2023
+	Gateway versions	: 2.1.1 - 12.0.1
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
 
@@ -30,8 +30,29 @@
 					- 'Port ASM1' doesn't show under Node Interfaces / Ports unless NodeInfo.txt is provided, or extracting from .tar
 
 
-	Revision History 	:
+	Revision History:
 
+				v12.0.1 3rd October 2023
+					Added new bits found recently:
+						New values to $NumberTypeLookup, and renamed to $ClgNumberTypeLookup
+						Cloned $NumberTypeLookup to new $CldNumberTypeLookup, as some of the values no longer align between calling and called.
+						New values to $TransferCapabilityLookup, $NumberingPlanLookup
+						'Normal' call type renamed 'Standard' in $CRDestinationTypeLookup & $CRCallPriorityLookup
+						Added 'Trunk Group' as a Destination Type in call routing table entry, and suppressed display of SigGp and other parameters
+					Fixed bugs:
+						A Routing Table's top 'H-table' may incorrectly show a value for First Signaling Group when DestinationType is 'Deny' or 'Trunk Group'
+						$Q850DescriptionLookup entries for 23 & 24 contained a rogue space in their index. They would have never shown in any table that specified them
+						SNMP / TCA Config wasn't showing '%' after the value for Logging Partition Usage
+
+				v12.0.0 * Not released.
+					Added new bits in 12.0.0:
+						- 'Global Date/Time Format' in Logging Configuration / Global Log
+						- 'Session Timer Offset' in SIP Profiles. (Appears if Session Timer is 'Enable')
+						- Added 'Diagnostic Logging / By Call Criteria'
+					Added new bits found recently:
+						- New transformation types added to $InputFieldLookup & $OutputFieldLookup (thanks Mike)
+						- Updated Logging Configuration / Global Log to show for all machine types
+						- Added new 1k 'mirrored port' values to $PortMirrorPortLookup
 
 				v11.0.0 4th February 2022
 					Added new bits in 11.0.0:
@@ -360,7 +381,7 @@ param(
 begin
 {
 
-	[System.Version]$ScriptVersion = '11.0.0'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
+	[System.Version]$ScriptVersion = '12.0.1'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
 	$Error.Clear()		  #Clear PowerShell's error variable
 	$Global:Debug = $psboundparameters.debug.ispresent
 
@@ -389,13 +410,14 @@ begin
 	$RelayConfigStateLookup = @{'0' = 'Online'; '1' = 'Passthrough'; '2' = 'Powerdown Passthrough'}
 
 	#Translations & Transformations
-	$InputFieldLookup  = @{'0' = 'Called Address/Number'; '1' = 'Called Numbering Type'; '2' = 'Called Numbering Plan'; '3' = 'Calling Address/Number'; '4' = 'Calling Numbering Type'; '5' = 'Calling Numbering Plan'; '6' = 'Calling Number Presentation'; '7' = 'Calling Number Screening'; '8' = 'Calling Name'; '9' = 'Original Called Number'; '10' = 'Redirecting Number'; '11' = 'Redirecting Number Type'; '12' = 'Redirecting Numbering Plan'; '13' = 'Transfer Capability'; '14' = 'User Value 1'; '15' = 'User Value 2'; '16' = 'User Value 3'; '17' = 'User Value 4'; '18' = 'User Value 5'; '19' = 'Calling Number, User Specified'; '20' = 'ELIN Identifier'; '21' = 'Called Extension'; '22' = 'Calling Extension'; '23' = 'Called Phone Context'; '24' = 'Calling Phone Context'; '25' = 'Original Destination Number'; '26' = 'Callback Pool Identifier'; '27' = 'SG User Value 1'; '28' = 'SG User Value 2'; '29' = 'SG User Value 3'; '30' = 'SG User Value 4'; '31' = 'SG User Value 5'; '32' = 'Called SubAddress/Number'; '33' = 'Calling SubAddress/Number'; '34' = 'Destination Trunk Group'; '35' = 'Unknown'; '36' = 'Presence: Called'; '37' = 'Presence: Calling'; '38' = 'Called Free Phone Number'; '39' = 'Unknown'; '40' = 'Unknown'}
-	$OutputFieldLookup = @{'0' = 'Called Address/Number'; '1' = 'Called Numbering Type'; '2' = 'Called Numbering Plan'; '3' = 'Calling Address/Number'; '4' = 'Calling Numbering Type'; '5' = 'Calling Numbering Plan'; '6' = 'Calling Number Presentation'; '7' = 'Calling Number Screening'; '8' = 'Calling Name'; '9' = 'Original Called Number'; '10' = 'Redirecting Number'; '11' = 'Redirecting Number Type'; '12' = 'Redirecting Numbering Plan'; '13' = 'Transfer Capability'; '14' = 'User Value 1'; '15' = 'User Value 2'; '16' = 'User Value 3'; '17' = 'User Value 4'; '18' = 'User Value 5'; '19' = 'Calling Number, User Specified'; '20' = 'ELIN Identifier'; '21' = 'Called Extension'; '22' = 'Calling Extension'; '23' = 'Called Phone Context'; '24' = 'Calling Phone Context'; '25' = 'Original Destination Number'; '26' = 'Callback Pool Identifier'; '27' = 'SG User Value 1'; '28' = 'SG User Value 2'; '29' = 'SG User Value 3'; '30' = 'SG User Value 4'; '31' = 'SG User Value 5'; '32' = 'Called SubAddress/Number'; '33' = 'Calling SubAddress/Number'; '34' = 'Destination Trunk Group'; '35' = 'Unknown'; '36' = 'Presence: Called'; '37' = 'Presence: Calling'; '38' = 'Called Free Phone Number'; '39' = 'Unknown'; '40' = 'Unknown'}
-	$NumberTypeLookup = @{'-1' = 'Any/Untranslated'; '0' = 'Unknown' ; '1' = 'Subscriber'; '2' = 'National'; '3' = 'Network-Specific'; '5' = 'International'}
-	$NumberingPlanLookup = @{'-1' = 'Any/Untranslated'; '0' = 'Unknown' ; '1' = 'ISDN'; '4' = 'National'; '5' = 'Private' ; '6' = 'Telephony'}
+	$InputFieldLookup  = @{'0' = 'Called Address/Number'; '1' = 'Called Numbering Type'; '2' = 'Called Numbering Plan'; '3' = 'Calling Address/Number'; '4' = 'Calling Numbering Type'; '5' = 'Calling Numbering Plan'; '6' = 'Calling Number Presentation'; '7' = 'Calling Number Screening'; '8' = 'Calling Name'; '9' = 'Original Called Number'; '10' = 'Redirecting Number'; '11' = 'Redirecting Number Type'; '12' = 'Redirecting Numbering Plan'; '13' = 'Transfer Capability'; '14' = 'User Value 1'; '15' = 'User Value 2'; '16' = 'User Value 3'; '17' = 'User Value 4'; '18' = 'User Value 5'; '19' = 'Calling Number, User Specified'; '20' = 'ELIN Identifier'; '21' = 'Called Extension'; '22' = 'Calling Extension'; '23' = 'Called Phone Context'; '24' = 'Calling Phone Context'; '25' = 'Original Destination Number'; '26' = 'Callback Pool Identifier'; '27' = 'SG User Value 1'; '28' = 'SG User Value 2'; '29' = 'SG User Value 3'; '30' = 'SG User Value 4'; '31' = 'SG User Value 5'; '32' = 'Called SubAddress/Number'; '33' = 'Calling SubAddress/Number'; '34' = 'Destination Trunk Group'; '35' = 'Connected Name'; '36' = 'Presence: Called Address/Number'; '37' = 'Presence: Calling Address/Number'; '38' = 'Called Free Phone Number'; '39' = 'SIP: Contact Domain'; '40' = 'SIP: R-URI Domain'; '41' = 'Host Name'; '42' = 'Local Registered User Name'}
+	$OutputFieldLookup = @{'0' = 'Called Address/Number'; '1' = 'Called Numbering Type'; '2' = 'Called Numbering Plan'; '3' = 'Calling Address/Number'; '4' = 'Calling Numbering Type'; '5' = 'Calling Numbering Plan'; '6' = 'Calling Number Presentation'; '7' = 'Calling Number Screening'; '8' = 'Calling Name'; '9' = 'Original Called Number'; '10' = 'Redirecting Number'; '11' = 'Redirecting Number Type'; '12' = 'Redirecting Numbering Plan'; '13' = 'Transfer Capability'; '14' = 'User Value 1'; '15' = 'User Value 2'; '16' = 'User Value 3'; '17' = 'User Value 4'; '18' = 'User Value 5'; '19' = 'Calling Number, User Specified'; '20' = 'ELIN Identifier'; '21' = 'Called Extension'; '22' = 'Calling Extension'; '23' = 'Called Phone Context'; '24' = 'Calling Phone Context'; '25' = 'Original Destination Number'; '26' = 'Callback Pool Identifier'; '27' = 'SG User Value 1'; '28' = 'SG User Value 2'; '29' = 'SG User Value 3'; '30' = 'SG User Value 4'; '31' = 'SG User Value 5'; '32' = 'Called SubAddress/Number'; '33' = 'Calling SubAddress/Number'; '34' = 'Destination Trunk Group'; '35' = 'Connected Name'; '36' = 'Presence: Called Address/Number'; '37' = 'Presence: Calling Address/Number'; '38' = 'Called Free Phone Number'; '39' = 'SIP: Contact Domain'; '40' = 'SIP: R-URI Domain'; '41' = 'Host Name'; '42' = 'Local Registered User Name'}
+	$ClgNumberTypeLookup = @{'-1' = 'Any/Untranslated'; '0' = 'Unknown' ; '1' = 'Subscriber'; '2' = 'National'; '3' = 'Network-Specific'; '4' = 'Abbreviated'; '5' = 'International'; '6' = 'H.323 ID or SIP'}
+	$CldNumberTypeLookup = @{'-1' = 'Any/Untranslated'; '0' = 'Unknown' ; '1' = 'Subscriber'; '2' = 'National'; '3' = 'Network-Specific'; '4' = 'Abbreviated'; '5' = 'International'; '6' = 'Subscriber (Oper. Req.)'; '7' = 'National (Oper. Req.)'; '8' = 'International (Oper. Req.)'; '9' = 'Not Present (Oper. Req.)'; '10' = 'Not Present (Cut Through)'; '11' = '950 Call '; '12' = 'Test Line Test Code'; '13' = 'H.323 ID or SIP'}
+	$NumberingPlanLookup = @{'-1' = 'Any/Untranslated'; '0' = 'Unknown' ; '1' = 'ISDN'; '2' = 'Data'; '3' = 'Telex'; '4' = 'National'; '5' = 'Private' ; '6' = 'Telephony'}
 	$CallingNumberPresentationLookup = @{'-1' = 'Any/Untranslated'; '0' = 'Allowed' ; '1' = 'Restricted'; '2' = 'Not Available'; '3' = 'Reserved' }
 	$CallingNumberScreeningLookup = @{'-1' = 'Any/Untranslated'; '0' = 'User - Not Screened' ; '1' = 'User - Verified'; '2' = 'User - Failed'; '3' = 'Network' }
-	$TransferCapabilityLookup = @{'-1' = 'Any/Unspecified'; '0' = 'Speech'}
+	$TransferCapabilityLookup = @{'-1' = 'Any/Unspecified'; '0' = 'Speech' ; '1' = 'Unrestricted Data'; '2' = '3.1kHz Audio'; '3' = 'Unrestricted Digital'; '4' = 'Video'}
 	$MatchTypeLookup = @{ '0' = 'Mandatory'; '1' = 'Optional'}
 	$MatchTypeLookupLong = @{ '0' = "Mandatory`n(Must Match)"; '1' = "Optional`n(Match One)"}
 	$TranslateActionLookup = @{'0' = '<Unknown>*'; '1' = '<Unknown>*'} #Does anyone still have a Translation table in service to tell me what these actions decode to?
@@ -410,6 +432,7 @@ begin
 	$LoggingProtocolLookup = @{'0' = 'UDP'; '1' = 'TCP'}
 	$SysLogFacilityLookup = @{'0' = 'user (User Level Messages)'; '1' = 'kernel (Kernel Level Messages'; '2' = 'mail (Mail System) '; '3' = 'daemon (System Daemons)'; '4' = 'auth (Security/Authorization Messages)'; '5' = 'lpr (Line Printer Subsystem)'; '6' = 'news (Network News Subsystem'; '7' = 'uucp (UUCP Subsystem)'; '8' = 'cron'; '9' = 'local0 (Local Use 0)' ; '10' = 'local1 (Local Use 1)'; '11' = 'local2 (Local Use 2)'; '12' = 'local3 (Local Use 3)'; '13' = 'local4 (Local Use 4)'; '14' = 'local5 (Local Use 5)'; '15' = 'local6 (Local Use 6)'; '16' = 'local7 (Local Use 7)'}
 	$LogLevelLookup = @{'0' = 'Default'; '1' = 'Trace'; '2' = 'Debug'; '3' = 'Informational'; '4' = 'Warning'; '5' = 'Error'; '6' = 'Fatal'}
+	$LogDateTimeLookup = @{'0' = 'Default'; '1' = 'RFC 5424'}
 	$LoggingSubsystemLookup = @{'ads' = 'Active Directory Service'; 'alarm' = 'Alarm Service'; 'mfg' = 'Analog Manufacturing Test Tool'; 'bmp' = 'BMP'; 'cas' = 'CAS Protocol'; 'route' = 'Call Routing Service'; 'csm' = 'Certificate Security Manager'; 'ccc' = 'Common Call Control'; 'trans' = 'Common Transport Service'; 'conf' = 'Configuration System'; 'zebos' = 'Core Switching/Routing'; 'dynamichosts' = 'Dynamic Hosts'; 'hosts' = 'Hosts'; 'splitdns' = 'split DNS'; 'isdn' = 'ISDN Protocol'; 'lic' = 'License Management Service'; 'log' = 'Logging System'; 'msc' = 'Media Stream Control Service'; 'symsock' = 'Network Services'; 'osys' = 'Operating System Logs'; 'pmapi' = 'Platform Management' ; 'rad' = 'RADIUS Manager Service'; 'resrc' = 'Resource Management'; 'security' = 'Security'; 'sip' = 'SIP Stack Service'; 'snmp' = 'SNMP'; 'watch' = 'Statistics & Live Info Service'; 'sba' = 'Survivable Branch Appliance'; 'shm' = 'System Health Monitoring'; 'sysio' = 'System I/O Service'; 'stmr' = 'System Timer Service'; 'tip' = 'Telephony Interface Process'; 'trapd' = 'Trap Service (SNMP)'; 'uas' = 'User Authentication Service'}
 
 	$AclProtocolLookup = @{'1' = 'ICMP'; '6' = 'TCP'; '17' = 'UDP'; '58' = 'ICMPv6'; '89' = 'OSPF'; '256' = 'Any'} # I'll fill this with remaining 1:1 entries later
@@ -426,8 +449,8 @@ begin
 	$ICEModeLookup = @{'0' = 'Lite'; '1' = 'Full'}
 
 	$CRMediaModeLookup = @{'0' = 'DSP'; '1' = 'Proxy' ; '2' = 'Proxy preferred over DSP' ; '3' = 'DSP Preferred over Proxy' ; '4' = 'Disabled' ; '5' = 'Direct'} #New descriptions in v4
-	$CRDestinationTypeLookup = @{'0' = 'Normal'; '1' = 'Registrar Table' ; '2' = 'Deny'}
-	$CRCallPriorityLookup = @{'0' = 'Non-Urgent'; '1' = 'Normal'; '2' = 'Urgent'; '3' = 'Emergency'}
+	$CRDestinationTypeLookup = @{'0' = 'Standard'; '1' = 'Registrar Table' ; '2' = 'Deny'; '3' = 'Trunk Group'}
+	$CRCallPriorityLookup = @{'0' = 'Non-Urgent'; '1' = 'Standard'; '2' = 'Urgent'; '3' = 'Emergency'}
 	$CRTODLookup = @{'0' = 'Sunday'; '1' = 'Monday' ; '2' = 'Tuesday' ; '3' = 'Wednesday' ; '4' = 'Thursday' ; '5' = 'Friday' ; '6' = 'Saturday'}
 
 	$IsdnSideOrientationLookup = @{'0' = 'User'; '1' = 'Network'}
@@ -473,11 +496,11 @@ begin
 		'483' = '483 - Too Many Hops'; '484' = '484 - Address Incomplete'; '485' = '485 - Ambiguous'; '486' = '486 - Busy Here'; '487' = '487 - Request Terminated'; '488' = '488 - Not Acceptable Here'; '491' = '491 - Request Pending'; '493' = '493 - Undecipherable'; '500' = '500 - Server Internal Error'; '501' = '501 - Not Implemented'; '502' = '502 - Bad Gateway'; '503' = '503 - Service Unavailable';`
 		'504' = '504 - Server Time-out'; '505' = '505 - Version Not Supported'; '513' = '513 - Message Too Large'; '580' = '580 - Precondition Failure';  '600' = '600 - Busy Everywhere'; '603' = '603 - Decline'; '604' = '604 - Does Not Exist Anywhere'; '606' = '606 - Not Acceptable'}
 	$Q850DescriptionLookup = @{'1' = '1: Unallocated Number'; '2' = '2: No Route To Transit Network'; '3' = '3: No Route To Destination'; '4' = '4: Send Special Information Tone'; '5' = '5: Misdialed Trunk Prefix'; '6' = '6: Channel Unacceptable'; '7' = '7: Call Awarded in Established Channel'; '8' = '8: Preemption'; '9' = '9: Preemption - Circuit Reserved for Reuse'; '10' = '10: Normal Call Clearing';`
-		'14' = '14: QoR: Ported Number'; '16' = '16: Normal Call Clearing'; '17' = '17: User Busy'; '18' = '18: No User Responding'; '19' = '19: No Answer from User (user alerted)'; '20' = '20: Subscriber Absent'; '21' = '21: Call Rejected'; '22' = '22: Number Changed'; '23 ' = '23: Redirection to New Destination'; '24 ' = '24: Call Rejected due to Feature at the Destination'; '25' = '25: Exchange Routing Error';`
+		'14' = '14: QoR: Ported Number'; '16' = '16: Normal Call Clearing'; '17' = '17: User Busy'; '18' = '18: No User Responding'; '19' = '19: No Answer from User (user alerted)'; '20' = '20: Subscriber Absent'; '21' = '21: Call Rejected'; '22' = '22: Number Changed'; '23' = '23: Redirection to New Destination'; '24' = '24: Call Rejected due to Feature at the Destination'; '25' = '25: Exchange Routing Error';`
 		'26' = '26: Non-selected User Clearing'; '27' = '27: Destination Out of Order'; '28' = '28: Invalid Number Format (addr incomplete)'; '29' = '29: Facility Rejected'; '30' = '30: Response to STATUS INQUIRY'; '31' = '31: Normal, Unspecified'; '34' = '34: No Circuit/Channel Available'; '38' = '38: Network Out of Order'; '39' = '39: Permanent Frame Mode Connection OoS';`
 		'40' = '40: Permanent Frame Mode Connection Oper'; '41' = '41: Temporary Failure'; '42' = '42: Switching Equipment Congestion'; '43' = '43: Access Information Discarded'; '44' = '44: Requested Circuit/Channel N/A'; '46' = '46: Precedence Call Blocked'; '47' = '47: Resource Unavailable, Unspecified'; '49' = '49: Quality of Service Not Available'; '50' = '50: Requested Facility Not Subscribed';`
 		'53' = '53: Outgoing Calls Barred Within CUG'; '55' = '55: Incoming Calls Barred Within CUG'; '57' = '57: Bearer Capability Not Authorized'; '58' = '58: Bearer Capability Not Available'; '62' = '62: Inconsistency in Outgoing IE'; '63' = '63: Service or Option N/A, unspecified'; '65' = '65: Bearer Capability Not Implemented'; '66' = '66: Channel Type Not Implemented'; '69' = '69: Requested Facility Not Implemented';`
-		'70' = '70: Only Restricted Digital Bearer Cap Supported'; '79' = '79: Service or Option not Implemented, Unspecified'; '81' = '81: Invalid Call Reference Value'; '82' = '82: Identified Channel Does Not Exist'; '83' = '83: Call Exists, but Call Identity Does Not'; '84' = '84: Call Identity in User'; '85' = '85: No Call Suspended'; '86' = '86: Call eith Requested Call Identity has Cleared';`
+		'70' = '70: Only Restricted Digital Bearer Cap Supported'; '79' = '79: Service or Option not Implemented, Unspecified'; '81' = '81: Invalid Call Reference Value'; '82' = '82: Identified Channel Does Not Exist'; '83' = '83: Call Exists, but Call Identity Does Not'; '84' = '84: Call Identity in User'; '85' = '85: No Call Suspended'; '86' = '86: Call with Requested Call Identity has Cleared';`
 		'87' = '87: User Not Member of CUG'; '88' = '88: Incompatible Destination';	'90' = '90: Non-Existent CUG'; '91' = '91: Invalid Transit Network Selection'; '95' = '95: Invalid Message, Unspecified'; '96' = '96: Mandatory Information Element is Missing'; '97' = '97: Message Type Non-existent / Not Implemented'; '98' = '98: Message Incompatible With Call State or Message Type';`
 		'99' = '99: IE/Parameter Non-existent or Not Implemented'; '100' = '100: Invalid Information Element Contents'; '101' = '101: Message Not Compatible with Call State'; '102' = '102: Recovery on Timer Expiry'; '103' = '103: Parameter Non-existent / Not Implemented, Passed On'; '110' = '110: Message With Unrecognized Parameter, Discarded'; '111' = '111: Protocol Error, Unspecified'; '127' = '127: Interworking, Unspecified'}
 
@@ -516,14 +539,15 @@ begin
 	$DHCPOptionsToUseLookup = @{'0' = 'All'; '1' = 'IP Address Only'; '2' = 'IP Address and DNS'}
 
 	$PortMirrorDirectionLookup = @{'0' = 'Transmit'; '1' = 'Receive'; '2' = 'Transmit & Receive'}
-	$PortMirrorPortLookup = @{'tap0' = 'DSP'; 'tap1' = 'CPU 1'; 'tap2' = 'CPU 2'; 'tap3' = 'tap3'; 'tap4' = 'tap4'; 'tap5' = 'tap5'; 'tap6' = 'tap6'; 'tap7' = 'tap7'; 'tap8' = 'tap8'; 'tap9' = 'tap9'; 'tap10' = 'tap10'; 'tap11' = 'tap11'; 'tap12' = 'tap12'; 'tap13' = 'tap13'; 'tap14' = 'Ethernet 1'; 'tap15' = 'Ethernet 2'; 'tap16' = 'Ethernet 3'; 'tap17' = 'Ethernet 4'; 'tap18' = 'tap18'; 'tap19' = 'ASM 2' ; 'tap20' = 'ASM 1'}
+	$PortMirrorPortLookup = @{'tap0' = 'DSP'; 'tap1' = 'CPU 1'; 'tap2' = 'CPU 2'; 'tap3' = 'tap3'; 'tap4' = 'tap4'; 'tap5' = 'tap5'; 'tap6' = 'tap6'; 'tap7' = 'tap7'; 'tap8' = 'tap8'; 'tap9' = 'tap9'; 'tap10' = 'tap10'; 'tap11' = 'tap11'; 'tap12' = 'tap12'; 'tap13' = 'tap13'; 'tap14' = 'Ethernet 1'; 'tap15' = 'Ethernet 2'; 'tap16' = 'Ethernet 3'; 'tap17' = 'Ethernet 4'; 'tap18' = 'tap18'; 'tap19' = 'ASM 2' ; 'tap20' = 'ASM 1';
+	'sw0' = 'DSP 1'; 'sw1' = 'DSP 2'; 'sw2' = 'Ethernet 1'; 'sw3' = 'Ethernet 2'; 'sw4' = 'ASM'; 'sw5' = 'CPU 1'}
 
 	$MstpInstanceBridgePriorityLookup = @{'0' = '0'; '1' = '4096'; '2' = '8192'; '3' = '12288'; '4' = '16384'; '5' = '20480' ; '6' = '24576'; '7' = '28672'; '8' = '32768'; '9' = '36864'; '10' = '40960'; '11' = '45056'; '12' = '49152'; '13' = '53248'; '14' = '57344'; '15' = '61440'}
 	$BridgeRegionSettingsProtocolLookup = @{'0' = 'MSTP'; '1' = '<Unhandled Value>'; '2' = '<Unhandled Value>' }
 
 	$LinkMonitorHostTypeLookup = @{'0' = 'Host'; '1' = 'Gateway' }
 	$LinkMonitorTypeLookup = @{'0' = 'CAC/IPSEC'; '1' = 'Backup Default Route' }
-	
+
 	$IPSecActivationLookup = @{'0' = 'Always'; '1' = 'Link Monitor Action' }
 	$IPSecEncryptionLookup = @{'0' = 'AES256'; '1' = 'AES128'; '2' = '3DES' }
 	$IPSecIntegrityLookup = @{'0' = 'SHA1'; '1' = 'SHA256' }
@@ -564,7 +588,7 @@ begin
 	$SNMPCategoryLookup = @{'0' = 'None'; '1' = 'Communication'; '2' = 'Equipment'; '3' = 'Processing' ; '4' = 'General'; '5' = 'Environmental'; '6' = 'QOS'; '7' = 'Security'}
 
 	$TCAMonitoredStatisticLookup = @{'0' = '<Unhandled Value>'; '1' = 'TDM Signaling Group Channel Usage'; '2' = 'SIP Call License Usage'; '3' = 'SIP Registrations' ; '4' = 'DSP Usage'; '5' = 'CPU Usage'; '6' = 'Memory Usage'; '7' = 'File Descriptor Usage'; '8' = '1 Minute Load Average'; '9' = '5 Minute Load Average'; '10' = '15 Minute Load Average'; '11' = 'Temporary Partition Usage'; '12' = 'Logging Partition Usage'; '13' = '<Unhandled Value>'; '14' = '<Unhandled Value>'; '15' = '<Unhandled Value>'; '16' = '<Unhandled Value>'; '17' = '<Unhandled Value>'}
-	$TCAMonitoredStatisticValueLookup = @{'0' = ''; '1' = ''; '2' = ''; '3' = '' ; '4' = '%'; '5' = '%'; '6' = '%'; '7' = ''; '8' = ''; '9' = ''; '10' = ''; '11' = '%'; '12' = ''; '13' = ''; '14' = ''; '15' = ''; '16' = ''; '17' = ''}
+	$TCAMonitoredStatisticValueLookup = @{'0' = ''; '1' = ''; '2' = ''; '3' = '' ; '4' = '%'; '5' = '%'; '6' = '%'; '7' = ''; '8' = ''; '9' = ''; '10' = ''; '11' = '%'; '12' = '%'; '13' = ''; '14' = ''; '15' = ''; '16' = ''; '17' = ''}
 
 	$NotificationProviderLookup = @{'0' = 'Kandy'; '1' = '<Unhandled Value>'}
 	$NotificationEventsLookup = @{'0' = 'E911'; '1' = '<Unhandled Value>'}
@@ -1797,7 +1821,7 @@ begin
 			$PortLicenceColumnTitles = @('Feature', 'Licensed', 'Number of Licensed Ports')
 
 			$FeatureLicenceCollection = @()
-			
+
 			#---------------------------------------------------------------------------------------------------------
 			# The Lite has five columns in this table but the 1k/2k only four. As of v8.1.5 I'm treating all values as
 			# though they have five columns, then leaving it to the very end to decide how many to write to file.
@@ -2119,7 +2143,7 @@ begin
 									if (('Forking') -match $LicenceLine[0]) { continue }
 								}
 							}
-							
+
 							#Now bung the values into one of two separate licence tables:
 							switch ($LicenceLine[0])
 							{
@@ -5244,13 +5268,15 @@ begin
 						$LoggingElements = $node.GetElementsByTagName('Token')
 						ForEach($LoggingElement in $LoggingElements)
 						{
-							# ---- Local log configuration (2k only) ----------
-							if (($LoggingElement.name -eq 'WebUI') -and ($platform -eq 'SBC 2000'))
+							# ---- Global log configuration  ----------
+							if ($LoggingElement.name -eq 'WebUI')
 							{
 								if ($LoggingElement.IE.classname -eq $null) { continue } # Empty / deleted entry
 								if ($LoggingElement.IE.classname -eq 'LOGGER_WEBUI_DEST')
 								{
 									$LocalLogServersCollection += , ('Global Log Level', $LogLevelLookup.Get_Item($LoggingElement.IE.DefaultLevel), '', '')
+									$LocalLogServersCollection += , ('Global Date/Time Format', (Test-ForNull -LookupTable $LogDateTimeLookup -value $LoggingElement.IE.LogDateTimeFormat))
+
 								}
 								$LoggingData += , ('Local Log Configuration', '', '', $LocalLogServersCollection)
 							}
@@ -5296,7 +5322,62 @@ begin
 											$LoggingSubsystemCollection += , $LoggingSubsystemObject
 										}
 									}
-									$LoggingData += , ('Subsystems', '', $LoggingSubsystemColumnTitles, $LoggingSubsystemCollection)
+									$LoggingData += , ('By Subsystem', '', $LoggingSubsystemColumnTitles, $LoggingSubsystemCollection)
+								}
+							}
+
+							# ---- LogFilter aka Diagnostic Logging / By Call Criteria ----------
+							if ($LoggingElement.name -eq 'LogFilter')
+							{
+								$ByCallCriteriaTables = $LoggingElement.GetElementsByTagName('ID')
+								if ($ByCallCriteriaTables.Count -ne 0)
+								{
+									ForEach ($ByCallCriteriaTable in $ByCallCriteriaTables)
+									{
+										if ($ByCallCriteriaTable.IE.classname -eq $null) { continue } # Empty / deleted entry
+										if ($ByCallCriteriaTable.IE.classname -eq 'LOGGER_LOG_FILTER_IE')
+										{
+											$CallCriteriaTable = @()
+											$CallCriteriaTable += ,('SPAN-L', 'Call Criteria Table', '', '')
+											$CallCriteriaTableDescription = (Fix-NullDescription -TableDescription $ByCallCriteriaTable.IE.Description -TableValue $ByCallCriteriaTable.value -TablePrefix 'filter #')
+											$CallCriteriaTable += ,('Description', $CallCriteriaTableDescription, '' , '')
+											$CallCriteriaTable += ,('Admin State', (Test-ForNull -LookupTable $EnabledLookup -value $ByCallCriteriaTable.IE.Enabled), '' , '')
+											$CallCriteriaTable += ,('SPAN-L', 'Criteria', '', '')
+											switch ($ByCallCriteriaTable.IE.RuleType)
+											{
+												'0' # Ingress SG
+												{
+													$CallCriteriaTable += ,('Rule type', 'Ingress SG', '', '')
+													$CallCriteriaTable += ,('Signaling Groups', $SgTableLookup.Get_Item($ByCallCriteriaTable.IE.SignalingGroupList), '', '')
+												}
+
+												'1' # Remote IP
+												{
+													$CallCriteriaTable += ,('Rule type', 'Remote IP', '', '')
+													$CallCriteriaTable += ,('Remote IP', $ByCallCriteriaTable.IE.RemoteIP, '', '')
+												}
+
+												'2' # Calling Party
+												{
+													$CallCriteriaTable += ,('Rule type', 'Calling Party', '', '')
+													$CallCriteriaTable += ,('Calling Party', $ByCallCriteriaTable.IE.CallingParty, '', '')
+												}
+
+												'3' # Called Party
+												{
+													$CallCriteriaTable += ,('Rule type', 'Called Party', '', '')
+													$CallCriteriaTable += ,('Called Party', $ByCallCriteriaTable.IE.CalledParty, '', '')
+												}
+
+												'4' # Nth GCID
+												{
+													$CallCriteriaTable += ,('Rule type', 'Nth GCID', '', '')
+													$CallCriteriaTable += ,('Every Nth GCID', $ByCallCriteriaTable.IE.RandomGCID, '', '')
+												}
+											}
+										}
+										$LoggingData += ,('By Call Criteria', $CallCriteriaTableDescription, '', $CallCriteriaTable)
+									}
 								}
 							}
 						}
@@ -5423,7 +5504,7 @@ begin
 											#Now the RH
 											$IPSecTunnelR1 += 'SPAN-R'
 											$IPSecTunnelR2 += 'Local Attributes'
-											
+
 											$IPSecTunnelR1 += 'Subject Distinguished Name'
 											$IPSecTunnelR2 += $IPSecTunnelLocalCert #Previously captured from Certificates
 											$IPSecTunnelR1 += 'Subject Alternate Name(s)'
@@ -6477,10 +6558,10 @@ begin
 												$SIPRecL2 += $SIPgroup.IE.Channels
 												$SIPRecL1 += 'SIP profile'
 												$SIPRecL2 += $SipProfileIdLookup.Get_Item($SIPgroup.IE.ProfileID)
-												
+
 												$SIPRecL1 += 'Recording Server Table'
 												$SIPRecL2 += $SIPServerTablesLookup.Get_Item($SIPgroup.IE.ServerClusterId)
-												
+
 												$SIPRecL1 += 'Load Balancing'
 												$SIPRecL2 += $SipLoadBalancingLookup.Get_Item($SIPgroup.IE.ServerSelection)
 												$SIPRecL1 += 'Channel Hunting'
@@ -6955,7 +7036,7 @@ begin
 										$InputFieldString = ''
 										switch ($translate.IE.InputField)
 										{
-											'1'	 { $InputFieldString = $NumberTypeLookup.Get_Item($translate.IE.InputFieldValue)}
+											'1'	 { $InputFieldString = $CldNumberTypeLookup.Get_Item($translate.IE.InputFieldValue)}
 											'2'	 { $InputFieldString = $NumberingPlanLookup.Get_Item($translate.IE.InputFieldValue)}
 											'5'	 { $InputFieldString = $NumberingPlanLookup.Get_Item($translate.IE.InputFieldValue)}
 											'6'	 { $InputFieldString = $CallingNumberPresentationLookup.Get_Item($translate.IE.InputFieldValue)}
@@ -6966,7 +7047,7 @@ begin
 										$OutputFieldString = ''
 										switch ($translate.IE.OutputField)
 										{
-											'1'	 { $OutputFieldString = $NumberTypeLookup.Get_Item($translate.IE.OutputFieldValue)}
+											'1'	 { $OutputFieldString = $CldNumberTypeLookup.Get_Item($translate.IE.OutputFieldValue)}
 											'2'	 { $OutputFieldString = $NumberingPlanLookup.Get_Item($translate.IE.OutputFieldValue)}
 											'5'	 { $OutputFieldString = $NumberingPlanLookup.Get_Item($translate.IE.OutputFieldValue)}
 											'6'	 { $OutputFieldString = $CallingNumberPresentationLookup.Get_Item($translate.IE.OutputFieldValue)}
@@ -7034,13 +7115,13 @@ begin
 										$MatchTypeString = $MatchTypeLookupLong.Get_Item($transform.IE.MatchType)
 										switch ($transform.IE.InputField)
 										{
-											'1'	 { $InputFieldString = $NumberTypeLookup.Get_Item($transform.IE.InputFieldValue)}
+											'1'	 { $InputFieldString = $CldNumberTypeLookup.Get_Item($transform.IE.InputFieldValue)}
 											'2'	 { $InputFieldString = $NumberingPlanLookup.Get_Item($transform.IE.InputFieldValue)}
-											'4'	 { $InputFieldString = $NumberTypeLookup.Get_Item($transform.IE.InputFieldValue)}
+											'4'	 { $InputFieldString = $ClgNumberTypeLookup.Get_Item($transform.IE.InputFieldValue)}
 											'5'	 { $InputFieldString = $NumberingPlanLookup.Get_Item($transform.IE.InputFieldValue)}
 											'6'	 { $InputFieldString = $CallingNumberPresentationLookup.Get_Item($transform.IE.InputFieldValue)}
 											'7'	 { $InputFieldString = $CallingNumberScreeningLookup.Get_Item($transform.IE.InputFieldValue)}
-											'11'	{ $InputFieldString = $NumberTypeLookup.Get_Item($transform.IE.InputFieldValue)}
+											'11'	{ $InputFieldString = $ClgNumberTypeLookup.Get_Item($transform.IE.InputFieldValue)}
 											'12'	{ $InputFieldString = $NumberingPlanLookup.Get_Item($transform.IE.InputFieldValue)}
 											'13'	{ $InputFieldString = $TransferCapabilityLookup.Get_Item($transform.IE.InputFieldValue)}
 											'34'	{ if ($transform.IE.InputFieldValue -eq '(.*)')
@@ -7053,13 +7134,13 @@ begin
 										$OutputFieldString = ''
 										switch ($transform.IE.OutputField)
 										{
-											'1'	 { $OutputFieldString = $NumberTypeLookup.Get_Item($transform.IE.OutputFieldValue)}
+											'1'	 { $OutputFieldString = $CldNumberTypeLookup.Get_Item($transform.IE.OutputFieldValue)}
 											'2'	 { $OutputFieldString = $NumberingPlanLookup.Get_Item($transform.IE.OutputFieldValue)}
-											'4'	 { $OutputFieldString = $NumberTypeLookup.Get_Item($transform.IE.OutputFieldValue)}
+											'4'	 { $OutputFieldString = $ClgNumberTypeLookup.Get_Item($transform.IE.OutputFieldValue)}
 											'5'	 { $OutputFieldString = $NumberingPlanLookup.Get_Item($transform.IE.OutputFieldValue)}
 											'6'	 { $OutputFieldString = $CallingNumberPresentationLookup.Get_Item($transform.IE.OutputFieldValue)}
 											'7'	 { $OutputFieldString = $CallingNumberScreeningLookup.Get_Item($transform.IE.OutputFieldValue)}
-											'11'	{ $OutputFieldString = $NumberTypeLookup.Get_Item($transform.IE.OutputFieldValue)}
+											'11'	{ $OutputFieldString = $ClgNumberTypeLookup.Get_Item($transform.IE.OutputFieldValue)}
 											'12'	{ $OutputFieldString = $NumberingPlanLookup.Get_Item($transform.IE.OutputFieldValue)}
 											'13'	{ $OutputFieldString = $TransferCapabilityLookup.Get_Item($transform.IE.OutputFieldValue)}
 											'34'	{ $OutputFieldString = ''}
@@ -7130,25 +7211,34 @@ begin
 											#We run through each table twice. The first time generates the overview (as a H-table) where the sequence is highlighted.
 											#The second pass then pulls and builds a separate V-table for each of the individual entries
 											#FIRST PASS - this generates the summary H-table
-											if ($route.IE.SignalingGroupList -ne '')
+											switch ($route.IE.DestinationType)
 											{
-												#We need to decode the signalling group(s)
-												$sequence = Decode-Sequence -EncodedSequence $route.IE.SignalingGroupList -byteCount 2
-												if ($sequence.Count -ne 0)
+												{(($_ -eq '0') -or ($_ -eq '1'))}
 												{
-													foreach ($each_SG in $sequence)
+													#Destination Type is Standard or Registrar Table - we need to decode the signalling group(s)
+													$sequence = Decode-Sequence -EncodedSequence $route.IE.SignalingGroupList -byteCount 2
+													if ($sequence.Count -ne 0)
 													{
-														$SgList += ("{0}`n" -f $SgTableLookup.Get_Item($each_SG.ToString()))
+														foreach ($each_SG in $sequence)
+														{
+															$SgList += ("{0}`n" -f $SgTableLookup.Get_Item($each_SG.ToString()))
+														}
+														$SgList = $SgList.Substring(0,$SgList.Length-1) #Strip the trailing CR
+														$FirstSg = ('{0}' -f $SgTableLookup.Get_Item($sequence[0].ToString()))
 													}
-													$SgList = $SgList.Substring(0,$SgList.Length-1) #Strip the trailing CR
-													$FirstSg = ('{0}' -f $SgTableLookup.Get_Item($sequence[0].ToString()))
 												}
-											}
-											else
-											{
-												#It'll be a 'Destination Type = Deny' entry
-												$SgList = 'None'
-												$FirstSg = 'None'
+												'2'
+												{
+													#Deny:
+													$SgList = 'None'
+													$FirstSg = 'None'
+												}
+												'3'
+												{
+													#Trunk Group:
+													$SgList = 'N/A'
+													$FirstSg = 'N/A'
+												}
 											}
 											if ([string]::IsNullOrEmpty($route.IE.Description))
 											{
@@ -7195,15 +7285,18 @@ begin
 												$RouteEntryTable += ,('Message Translation Table', $MsgTranslationTablesLookup.Get_Item($route.IE.MessageTranslationTable), '', '')
 												$RouteEntryTable += ,('Cause Code Reroutes', $RerouteTablesLookup.Get_Item($route.IE.ReRouteTable), '', '')
 												$RouteEntryTable += ,('Cancel Others upon Forwarding', $EnabledLookup.Get_Item($route.IE.CancelOthersUponForwarding), '', '')
-												if ($LicencedForForking -eq $false)
+												if ($route.IE.DestinationType -ne '3')
 												{
-													$RouteEntryTable += ,('Fork Call', 'Not Licensed', '', '')
+													if ($LicencedForForking -eq $false)
+													{
+														$RouteEntryTable += ,('Fork Call', 'Not Licensed', '', '')
+													}
+													else
+													{
+														$RouteEntryTable += ,('Fork Call', $CRCallForking, '', '')
+													}
+													$RouteEntryTable += ,('Destination Signaling Groups', $SgList, '', '')
 												}
-												else
-												{
-													$RouteEntryTable += ,('Fork Call', $CRCallForking, '', '')
-												}
-												$RouteEntryTable += ,('Destination Signaling Groups', $SgList, '', '')
 												if ($route.IE.MaximumCallDuration -eq $null)
 												{
 													$RouteEntryTable += ,('Enable Maximum Call Duration', '<n/a this rls>', '', '')
@@ -7604,7 +7697,7 @@ begin
 											}
 											$MediaListTable += ,('Dead Call Detection', $ReverseEnabledLookup.Get_Item($MediaListProfile.IE.DeadCallDetection), '', '')
 											$MediaListTable += ,('Silence Suppression', $ReverseEnabledLookup.Get_Item($MediaListProfile.IE.SilenceSuppression), '', '')
-											$MediaListTable += ,('Enforce SG Codec Priority', (Test-ForNull -LookupTable $EnabledLookup -value $MediaListProfile.IE.EnforceCodecPriority), '', '') 
+											$MediaListTable += ,('Enforce SG Codec Priority', (Test-ForNull -LookupTable $EnabledLookup -value $MediaListProfile.IE.EnforceCodecPriority), '', '')
 											if ($MediaListProfile.IE.CryptoProfileID -ne '0')
 											{
 												if ($MediaListProfile.IE.SrtpROC -eq $null)
@@ -8741,6 +8834,15 @@ begin
 												$SipProfilesL2 += $SIPProfile.IE.SessionTimerMin
 												$SipProfilesL1 += 'Offered Session Timer'
 												$SipProfilesL2 += $SIPProfile.IE.SessionTimerExp
+												$SipProfilesL1 += 'Session Timer Offset'
+												if ($SIPProfile.IE.SessionTimerOffset -eq $null)
+												{
+													$SipProfilesL2 += '<n/a this rls>'
+												}
+												else
+												{
+													$SipProfilesL2 += $SIPProfile.IE.SessionTimerOffset
+												}
 												$SipProfilesL1 += 'Terminate on Refresh Failure'
 												$SipProfilesL2 += Test-ForNull -LookupTable $TrueFalseLookup -value $SIPProfile.IE.TerminateOnRefreshFailure
 											}
@@ -9884,7 +9986,7 @@ begin
 							#$SNMPData += , ('TCA Configuration', '', $TCAStatisticsColumnTitles, $TCAStatisticsCollection)
 						}
 					}
-					
+
 					#---------- Notification Service ------------------------
 					'NotificationService'
 					{
@@ -9913,7 +10015,7 @@ begin
 											$NotificationTable += ,('Secret', '****', '' , '')
 											$NotificationTable += ,('Monitoring Interval', ($NotificationProfile.IE.MonitoringInterval + ' hours'), '' , '')
 											$NotificationTable += ,('Events', (Test-ForNull -LookupTable $NotificationEventsLookup -value $NotificationProfile.IE.Events), '' , '')
-											$E911Recipients = [regex]::replace($NotificationProfile.IE.E911RecipientsList, ',' , "`n") # Write each recipient on a new line 
+											$E911Recipients = [regex]::replace($NotificationProfile.IE.E911RecipientsList, ',' , "`n") # Write each recipient on a new line
 											$NotificationTable += ,('E911 Recipients List', $E911Recipients, '' , '')
 											$NotificationTable += ,('E911 Message', $NotificationProfile.IE.E911Message, '' , '')
 										}
@@ -10498,141 +10600,218 @@ end
 
 #Code signing certificate kindly provided by Digicert:
 # SIG # Begin signature block
-# MIIZkAYJKoZIhvcNAQcCoIIZgTCCGX0CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIIn/gYJKoZIhvcNAQcCoIIn7zCCJ+sCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUCTfjqmzrvgByaGwwPt/+fV6z
-# kMagghSeMIIE/jCCA+agAwIBAgIQDUJK4L46iP9gQCHOFADw3TANBgkqhkiG9w0B
-# AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
-# VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
-# c3VyZWQgSUQgVGltZXN0YW1waW5nIENBMB4XDTIxMDEwMTAwMDAwMFoXDTMxMDEw
-# NjAwMDAwMFowSDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMu
-# MSAwHgYDVQQDExdEaWdpQ2VydCBUaW1lc3RhbXAgMjAyMTCCASIwDQYJKoZIhvcN
-# AQEBBQADggEPADCCAQoCggEBAMLmYYRnxYr1DQikRcpja1HXOhFCvQp1dU2UtAxQ
-# tSYQ/h3Ib5FrDJbnGlxI70Tlv5thzRWRYlq4/2cLnGP9NmqB+in43Stwhd4CGPN4
-# bbx9+cdtCT2+anaH6Yq9+IRdHnbJ5MZ2djpT0dHTWjaPxqPhLxs6t2HWc+xObTOK
-# fF1FLUuxUOZBOjdWhtyTI433UCXoZObd048vV7WHIOsOjizVI9r0TXhG4wODMSlK
-# XAwxikqMiMX3MFr5FK8VX2xDSQn9JiNT9o1j6BqrW7EdMMKbaYK02/xWVLwfoYer
-# vnpbCiAvSwnJlaeNsvrWY4tOpXIc7p96AXP4Gdb+DUmEvQECAwEAAaOCAbgwggG0
-# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsG
-# AQUFBwMIMEEGA1UdIAQ6MDgwNgYJYIZIAYb9bAcBMCkwJwYIKwYBBQUHAgEWG2h0
-# dHA6Ly93d3cuZGlnaWNlcnQuY29tL0NQUzAfBgNVHSMEGDAWgBT0tuEgHf4prtLk
-# YaWyoiWyyBc1bjAdBgNVHQ4EFgQUNkSGjqS6sGa+vCgtHUQ23eNqerwwcQYDVR0f
-# BGowaDAyoDCgLoYsaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL3NoYTItYXNzdXJl
-# ZC10cy5jcmwwMqAwoC6GLGh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9zaGEyLWFz
-# c3VyZWQtdHMuY3JsMIGFBggrBgEFBQcBAQR5MHcwJAYIKwYBBQUHMAGGGGh0dHA6
-# Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBPBggrBgEFBQcwAoZDaHR0cDovL2NhY2VydHMu
-# ZGlnaWNlcnQuY29tL0RpZ2lDZXJ0U0hBMkFzc3VyZWRJRFRpbWVzdGFtcGluZ0NB
-# LmNydDANBgkqhkiG9w0BAQsFAAOCAQEASBzctemaI7znGucgDo5nRv1CclF0CiNH
-# o6uS0iXEcFm+FKDlJ4GlTRQVGQd58NEEw4bZO73+RAJmTe1ppA/2uHDPYuj1UUp4
-# eTZ6J7fz51Kfk6ftQ55757TdQSKJ+4eiRgNO/PT+t2R3Y18jUmmDgvoaU+2QzI2h
-# F3MN9PNlOXBL85zWenvaDLw9MtAby/Vh/HUIAHa8gQ74wOFcz8QRcucbZEnYIpp1
-# FUL1LTI4gdr0YKK6tFL7XOBhJCVPst/JKahzQ1HavWPWH1ub9y4bTxMd90oNcX6X
-# t/Q/hOvB46NJofrOp79Wz7pZdmGJX36ntI5nePk2mOHLKNpbh6aKLzCCBS8wggQX
-# oAMCAQICEAqt2yhVXFSaEiY6y4bT9zkwDQYJKoZIhvcNAQELBQAwcjELMAkGA1UE
-# BhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2lj
-# ZXJ0LmNvbTExMC8GA1UEAxMoRGlnaUNlcnQgU0hBMiBBc3N1cmVkIElEIENvZGUg
-# U2lnbmluZyBDQTAeFw0yMTA0MjMwMDAwMDBaFw0yMjA4MDQyMzU5NTlaMG0xCzAJ
-# BgNVBAYTAkFVMRgwFgYDVQQIEw9OZXcgU291dGggV2FsZXMxEjAQBgNVBAcTCVBl
-# dGVyc2hhbTEXMBUGA1UEChMOR3JlaWcgU2hlcmlkYW4xFzAVBgNVBAMTDkdyZWln
-# IFNoZXJpZGFuMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxrk1NuHH
-# qyg9djhyuoE1UdImHdEItBzg/7zQ87RAQthP71A2GJ++zokQ6KfjbH5+UrEdODZN
-# ibJF6/PnaVC1tUKPQHnauezk7ozu0JeUjLrxndxV8VEy3R/7wXp4hQ7XGaIehhhI
-# u5+b6M0ZdTAmt93cT6AJYy8v/dPJr1DmZkj2KSbj10Ca9unAegKWsyDJmCQQ2EU5
-# KxlRmPMwZK6as/SfAYVOxTnb5t7kO/F0HyKZJar5czLZn7CVWVke5QTqL6ZTnQg9
-# 0u18c96gesFPAl247h+SgcLP4FOSzKVrF4NeMAyXlxettGiF2iei3r6zz8BEyhR0
-# CXdbGzgmqDaU8QIDAQABo4IBxDCCAcAwHwYDVR0jBBgwFoAUWsS5eyoKo6XqcQPA
-# YPkt9mV1DlgwHQYDVR0OBBYEFDGB9TXcWUxGF52VHrnUqrZUeyXyMA4GA1UdDwEB
-# /wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzB3BgNVHR8EcDBuMDWgM6Axhi9o
-# dHRwOi8vY3JsMy5kaWdpY2VydC5jb20vc2hhMi1hc3N1cmVkLWNzLWcxLmNybDA1
-# oDOgMYYvaHR0cDovL2NybDQuZGlnaWNlcnQuY29tL3NoYTItYXNzdXJlZC1jcy1n
-# MS5jcmwwSwYDVR0gBEQwQjA2BglghkgBhv1sAwEwKTAnBggrBgEFBQcCARYbaHR0
-# cDovL3d3dy5kaWdpY2VydC5jb20vQ1BTMAgGBmeBDAEEATCBhAYIKwYBBQUHAQEE
-# eDB2MCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wTgYIKwYB
-# BQUHMAKGQmh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFNIQTJB
-# c3N1cmVkSURDb2RlU2lnbmluZ0NBLmNydDAMBgNVHRMBAf8EAjAAMA0GCSqGSIb3
-# DQEBCwUAA4IBAQDx1qRhZTX/nkQW4jCx2zWZsKJjMbeIUWMLi2dnuU9A9n1fIwwv
-# +ab3jBKmoztY171Kxs0U97Tm/IzlwPeekIBKmTtThdBFmSqfU09eUPvtjLuI7H1j
-# REAYH6MlzBIGRqbfaTSr7f+bSdSHsXZ68fB4zZyBg3s5N98yEFUe+978Of0hWRA5
-# HlsNAdwjgih3dk9h1qBoqjVpt7VFLzpz7c99QBEND1zwn0VAwaxrFylraKjtnApK
-# Gbu9Ow0YmL8kQ81B+pop8KzxQVEKA2A5wGpJciWgSSAatyEPZrPdcqIccktfV6gw
-# pFZcN20IMqgQMv19mWLgywAJ2Er/ixi7G36qMIIFMDCCBBigAwIBAgIQBAkYG1/V
-# u2Z1U0O1b5VQCDANBgkqhkiG9w0BAQsFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UE
-# ChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYD
-# VQQDExtEaWdpQ2VydCBBc3N1cmVkIElEIFJvb3QgQ0EwHhcNMTMxMDIyMTIwMDAw
-# WhcNMjgxMDIyMTIwMDAwWjByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNl
-# cnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdp
-# Q2VydCBTSEEyIEFzc3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMIIBIjANBgkqhkiG
-# 9w0BAQEFAAOCAQ8AMIIBCgKCAQEA+NOzHH8OEa9ndwfTCzFJGc/Q+0WZsTrbRPV/
-# 5aid2zLXcep2nQUut4/6kkPApfmJ1DcZ17aq8JyGpdglrA55KDp+6dFn08b7KSfH
-# 03sjlOSRI5aQd4L5oYQjZhJUM1B0sSgmuyRpwsJS8hRniolF1C2ho+mILCCVrhxK
-# hwjfDPXiTWAYvqrEsq5wMWYzcT6scKKrzn/pfMuSoeU7MRzP6vIK5Fe7SrXpdOYr
-# /mzLfnQ5Ng2Q7+S1TqSp6moKq4TzrGdOtcT3jNEgJSPrCGQ+UpbB8g8S9MWOD8Gi
-# 6CxR93O8vYWxYoNzQYIH5DiLanMg0A9kczyen6Yzqf0Z3yWT0QIDAQABo4IBzTCC
-# AckwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwEwYDVR0lBAww
-# CgYIKwYBBQUHAwMweQYIKwYBBQUHAQEEbTBrMCQGCCsGAQUFBzABhhhodHRwOi8v
-# b2NzcC5kaWdpY2VydC5jb20wQwYIKwYBBQUHMAKGN2h0dHA6Ly9jYWNlcnRzLmRp
-# Z2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5jcnQwgYEGA1UdHwR6
-# MHgwOqA4oDaGNGh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3Vy
-# ZWRJRFJvb3RDQS5jcmwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9E
-# aWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwTwYDVR0gBEgwRjA4BgpghkgBhv1s
-# AAIEMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8vd3d3LmRpZ2ljZXJ0LmNvbS9DUFMw
-# CgYIYIZIAYb9bAMwHQYDVR0OBBYEFFrEuXsqCqOl6nEDwGD5LfZldQ5YMB8GA1Ud
-# IwQYMBaAFEXroq/0ksuCMS1Ri6enIZ3zbcgPMA0GCSqGSIb3DQEBCwUAA4IBAQA+
-# 7A1aJLPzItEVyCx8JSl2qB1dHC06GsTvMGHXfgtg/cM9D8Svi/3vKt8gVTew4fbR
-# knUPUbRupY5a4l4kgU4QpO4/cY5jDhNLrddfRHnzNhQGivecRk5c/5CxGwcOkRX7
-# uq+1UcKNJK4kxscnKqEpKBo6cSgCPC6Ro8AlEeKcFEehemhor5unXCBc2XGxDI+7
-# qPjFEmifz0DLQESlE/DmZAwlCEIysjaKJAL+L3J+HNdJRZboWR3p+nRka7LrZkPa
-# s7CM1ekN3fYBIM6ZMWM9CBoYs4GbT8aTEAb8B4H6i9r5gkn3Ym6hU/oSlBiFLpKR
-# 6mhsRDKyZqHnGKSaZFHvMIIFMTCCBBmgAwIBAgIQCqEl1tYyG35B5AXaNpfCFTAN
-# BgkqhkiG9w0BAQsFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQg
-# SW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2Vy
-# dCBBc3N1cmVkIElEIFJvb3QgQ0EwHhcNMTYwMTA3MTIwMDAwWhcNMzEwMTA3MTIw
-# MDAwWjByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
-# VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
-# c3VyZWQgSUQgVGltZXN0YW1waW5nIENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
-# MIIBCgKCAQEAvdAy7kvNj3/dqbqCmcU5VChXtiNKxA4HRTNREH3Q+X1NaH7ntqD0
-# jbOI5Je/YyGQmL8TvFfTw+F+CNZqFAA49y4eO+7MpvYyWf5fZT/gm+vjRkcGGlV+
-# Cyd+wKL1oODeIj8O/36V+/OjuiI+GKwR5PCZA207hXwJ0+5dyJoLVOOoCXFr4M8i
-# EA91z3FyTgqt30A6XLdR4aF5FMZNJCMwXbzsPGBqrC8HzP3w6kfZiFBe/WZuVmEn
-# KYmEUeaC50ZQ/ZQqLKfkdT66mA+Ef58xFNat1fJky3seBdCEGXIX8RcG7z3N1k3v
-# BkL9olMqT4UdxB08r8/arBD13ays6Vb/kwIDAQABo4IBzjCCAcowHQYDVR0OBBYE
-# FPS24SAd/imu0uRhpbKiJbLIFzVuMB8GA1UdIwQYMBaAFEXroq/0ksuCMS1Ri6en
-# IZ3zbcgPMBIGA1UdEwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgGGMBMGA1Ud
-# JQQMMAoGCCsGAQUFBwMIMHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcwAYYYaHR0
-# cDovL29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8vY2FjZXJ0
-# cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0MIGBBgNV
-# HR8EejB4MDqgOKA2hjRodHRwOi8vY3JsNC5kaWdpY2VydC5jb20vRGlnaUNlcnRB
-# c3N1cmVkSURSb290Q0EuY3JsMDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5j
-# b20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3JsMFAGA1UdIARJMEcwOAYKYIZI
-# AYb9bAACBDAqMCgGCCsGAQUFBwIBFhxodHRwczovL3d3dy5kaWdpY2VydC5jb20v
-# Q1BTMAsGCWCGSAGG/WwHATANBgkqhkiG9w0BAQsFAAOCAQEAcZUS6VGHVmnN793a
-# fKpjerN4zwY3QITvS4S/ys8DAv3Fp8MOIEIsr3fzKx8MIVoqtwU0HWqumfgnoma/
-# Capg33akOpMP+LLR2HwZYuhegiUexLoceywh4tZbLBQ1QwRostt1AuByx5jWPGTl
-# H0gQGF+JOGFNYkYkh2OMkVIsrymJ5Xgf1gsUpYDXEkdws3XVk4WTfraSZ/tTYYmo
-# 9WuWwPRYaQ18yAGxuSh1t5ljhSKMYcp5lH5Z/IwP42+1ASa2bKXuh1Eh5Fhgm7oM
-# LSttosR+u8QlK0cCCHxJrhO24XxCQijGGFbPQTS2Zl22dHv1VjMiLyI2skuiSpXY
-# 9aaOUjGCBFwwggRYAgEBMIGGMHIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdp
-# Q2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xMTAvBgNVBAMTKERp
-# Z2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBDb2RlIFNpZ25pbmcgQ0ECEAqt2yhVXFSa
-# EiY6y4bT9zkwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAw
-# GQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisG
-# AQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFCSY5AZrZFcIhdk8VGmJvRlDAFlRMA0G
-# CSqGSIb3DQEBAQUABIIBAII+3u51WbO4WVAPSQSZ+K6Mw7GU9Z88Tcb2qBDNxslD
-# MONmMnyH47iAvmPVVjAg1bHQjE0v5EOikaKSLojlNyHJMD8ljfkLae4OtBG16MLd
-# lvs8o5cequxmACqMWs9Tn0vQIB5JSgah+3I9pzNOaVIVyHkP1jqP1jDzcPATtIDA
-# nrKUygvZyl2tU4YXmQSoJdL207VusE+5JnMjFCJlB+Uek39EGVQZRRh8WK63Chhc
-# DO+Dy7OxBErcG61/r6iiWahQPWOTuKiPRu3B1SzXa2xXSmsKHDxV89Katk7UEzC1
-# PJ9g9WmkzdK00IB3p/JBcB57ufdDgwE+W7EGqpI6q/ihggIwMIICLAYJKoZIhvcN
-# AQkGMYICHTCCAhkCAQEwgYYwcjELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lD
-# ZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTExMC8GA1UEAxMoRGln
-# aUNlcnQgU0hBMiBBc3N1cmVkIElEIFRpbWVzdGFtcGluZyBDQQIQDUJK4L46iP9g
-# QCHOFADw3TANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0B
-# BwEwHAYJKoZIhvcNAQkFMQ8XDTIyMDIwMzIyMTgxNVowLwYJKoZIhvcNAQkEMSIE
-# IOy3Kvg1OKF1vhzGkYunMmZHUcJG9WMWN2J0E9wcBOyGMA0GCSqGSIb3DQEBAQUA
-# BIIBAIbVMuNDNTf/bBSz7X3kpMEqYMpTebcxdGUI9qNvAvCuktpCkK6g9XFfk/Vx
-# QXuRw+jDphqVaj4RKagszzktHceBlwYOoyeZp6A59UFYX6+wpB871BdjmpBxx430
-# 2rojc03ZIG2z/+zh+FHiCqSQeaTLdXsuAN3++td1+xFRT9YGMtQVK2BQQfMcB84T
-# NtF3TVjmPWM0Sr4M3MF22oRznpqBElCcLuD0+RYhMQJLCp28HdCW7Ug1CRyHP97f
-# RHo9mtTrIVKOz8O9YJhSwsbsFs1eBi+43U1m36Gtk3e+P6tlRwq6BbjvGNrpLCUw
-# hNxzGP7kvrrKq7pbv8bBBqthGjo=
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUY8o10pvHlh9QdASpYDGWWOzS
+# EqaggiEmMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
+# VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
+# IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
+# CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cu
+# ZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3QgRzQw
+# ggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQC/5pBzaN675F1KPDAiMGkz
+# 7MKnJS7JIT3yithZwuEppz1Yq3aaza57G4QNxDAf8xukOBbrVsaXbR2rsnnyyhHS
+# 5F/WBTxSD1Ifxp4VpX6+n6lXFllVcq9ok3DCsrp1mWpzMpTREEQQLt+C8weE5nQ7
+# bXHiLQwb7iDVySAdYyktzuxeTsiT+CFhmzTrBcZe7FsavOvJz82sNEBfsXpm7nfI
+# SKhmV1efVFiODCu3T6cw2Vbuyntd463JT17lNecxy9qTXtyOj4DatpGYQJB5w3jH
+# trHEtWoYOAMQjdjUN6QuBX2I9YI+EJFwq1WCQTLX2wRzKm6RAXwhTNS8rhsDdV14
+# Ztk6MUSaM0C/CNdaSaTC5qmgZ92kJ7yhTzm1EVgX9yRcRo9k98FpiHaYdj1ZXUJ2
+# h4mXaXpI8OCiEhtmmnTK3kse5w5jrubU75KSOp493ADkRSWJtppEGSt+wJS00mFt
+# 6zPZxd9LBADMfRyVw4/3IbKyEbe7f/LVjHAsQWCqsWMYRJUadmJ+9oCw++hkpjPR
+# iQfhvbfmQ6QYuKZ3AeEPlAwhHbJUKSWJbOUOUlFHdL4mrLZBdd56rF+NP8m800ER
+# ElvlEFDrMcXKchYiCd98THU/Y+whX8QgUWtvsauGi0/C1kVfnSD8oR7FwI+isX4K
+# Jpn15GkvmB0t9dmpsh3lGwIDAQABo4IBOjCCATYwDwYDVR0TAQH/BAUwAwEB/zAd
+# BgNVHQ4EFgQU7NfjgtJxXWRM3y5nP+e6mK4cD08wHwYDVR0jBBgwFoAUReuir/SS
+# y4IxLVGLp6chnfNtyA8wDgYDVR0PAQH/BAQDAgGGMHkGCCsGAQUFBwEBBG0wazAk
+# BggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAC
+# hjdodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURS
+# b290Q0EuY3J0MEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0
+# LmNvbS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwEQYDVR0gBAowCDAGBgRV
+# HSAAMA0GCSqGSIb3DQEBDAUAA4IBAQBwoL9DXFXnOF+go3QbPbYW1/e/Vwe9mqyh
+# hyzshV6pGrsi+IcaaVQi7aSId229GhT0E0p6Ly23OO/0/4C5+KH38nLeJLxSA8hO
+# 0Cre+i1Wz/n096wwepqLsl7Uz9FDRJtDIeuWcqFItJnLnU+nBgMTdydE1Od/6Fmo
+# 8L8vC6bp8jQ87PcDx4eo0kxAGTVGamlUsLihVo7spNU96LHc/RzY9HdaXFSMb++h
+# UD38dglohJ9vytsgjTVgHAIDyyCwrFigDkBjxZgiwbJZ9VVrzyerbHbObyMt9H5x
+# aiNrIv8SuFQtJ37YOtnwtoeW/VvRXKwYw02fc7cBqZ9Xql4o4rmUMIIGrjCCBJag
+# AwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkqhkiG9w0BAQsFADBiMQswCQYDVQQG
+# EwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNl
+# cnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3QgRzQwHhcNMjIw
+# MzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
+# ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
+# UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBMIICIjANBgkqhkiG9w0BAQEF
+# AAOCAg8AMIICCgKCAgEAxoY1BkmzwT1ySVFVxyUDxPKRN6mXUaHW0oPRnkyibaCw
+# zIP5WvYRoUQVQl+kiPNo+n3znIkLf50fng8zH1ATCyZzlm34V6gCff1DtITaEfFz
+# sbPuK4CEiiIY3+vaPcQXf6sZKz5C3GeO6lE98NZW1OcoLevTsbV15x8GZY2UKdPZ
+# 7Gnf2ZCHRgB720RBidx8ald68Dd5n12sy+iEZLRS8nZH92GDGd1ftFQLIWhuNyG7
+# QKxfst5Kfc71ORJn7w6lY2zkpsUdzTYNXNXmG6jBZHRAp8ByxbpOH7G1WE15/teP
+# c5OsLDnipUjW8LAxE6lXKZYnLvWHpo9OdhVVJnCYJn+gGkcgQ+NDY4B7dW4nJZCY
+# OjgRs/b2nuY7W+yB3iIU2YIqx5K/oN7jPqJz+ucfWmyU8lKVEStYdEAoq3NDzt9K
+# oRxrOMUp88qqlnNCaJ+2RrOdOqPVA+C/8KI8ykLcGEh/FDTP0kyr75s9/g64ZCr6
+# dSgkQe1CvwWcZklSUPRR8zZJTYsg0ixXNXkrqPNFYLwjjVj33GHek/45wPmyMKVM
+# 1+mYSlg+0wOI/rOP015LdhJRk8mMDDtbiiKowSYI+RQQEgN9XyO7ZONj4KbhPvbC
+# dLI/Hgl27KtdRnXiYKNYCQEoAA6EVO7O6V3IXjASvUaetdN2udIOa5kM0jO0zbEC
+# AwEAAaOCAV0wggFZMBIGA1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0OBBYEFLoW2W1N
+# hS9zKXaaL3WMaiCPnshvMB8GA1UdIwQYMBaAFOzX44LScV1kTN8uZz/nupiuHA9P
+# MA4GA1UdDwEB/wQEAwIBhjATBgNVHSUEDDAKBggrBgEFBQcDCDB3BggrBgEFBQcB
+# AQRrMGkwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBBBggr
+# BgEFBQcwAoY1aHR0cDovL2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1
+# c3RlZFJvb3RHNC5jcnQwQwYDVR0fBDwwOjA4oDagNIYyaHR0cDovL2NybDMuZGln
+# aWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcmwwIAYDVR0gBBkwFzAI
+# BgZngQwBBAIwCwYJYIZIAYb9bAcBMA0GCSqGSIb3DQEBCwUAA4ICAQB9WY7Ak7Zv
+# mKlEIgF+ZtbYIULhsBguEE0TzzBTzr8Y+8dQXeJLKftwig2qKWn8acHPHQfpPmDI
+# 2AvlXFvXbYf6hCAlNDFnzbYSlm/EUExiHQwIgqgWvalWzxVzjQEiJc6VaT9Hd/ty
+# dBTX/6tPiix6q4XNQ1/tYLaqT5Fmniye4Iqs5f2MvGQmh2ySvZ180HAKfO+ovHVP
+# ulr3qRCyXen/KFSJ8NWKcXZl2szwcqMj+sAngkSumScbqyQeJsG33irr9p6xeZmB
+# o1aGqwpFyd/EjaDnmPv7pp1yr8THwcFqcdnGE4AJxLafzYeHJLtPo0m5d2aR8XKc
+# 6UsCUqc3fpNTrDsdCEkPlM05et3/JWOZJyw9P2un8WbDQc1PtkCbISFA0LcTJM3c
+# HXg65J6t5TRxktcma+Q4c6umAU+9Pzt4rUyt+8SVe+0KXzM5h0F4ejjpnOHdI/0d
+# KNPH+ejxmF/7K9h+8kaddSweJywm228Vex4Ziza4k9Tm8heZWcpw8De/mADfIBZP
+# J/tgZxahZrrdVcA6KYawmKAr7ZVBtzrVFZgxtGIJDwq9gdkT/r+k0fNX2bwE+oLe
+# Mt8EifAAzV3C+dAjfwAL5HYCJtnwZXZCpimHCUcr5n8apIUP/JiW9lVUKx+A+sDy
+# Divl1vupL0QVSucTDh3bNzgaoSv27dZ8/DCCBrAwggSYoAMCAQICEAitQLJg0pxM
+# n17Nqb2TrtkwDQYJKoZIhvcNAQEMBQAwYjELMAkGA1UEBhMCVVMxFTATBgNVBAoT
+# DERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTEhMB8GA1UE
+# AxMYRGlnaUNlcnQgVHJ1c3RlZCBSb290IEc0MB4XDTIxMDQyOTAwMDAwMFoXDTM2
+# MDQyODIzNTk1OVowaTELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJ
+# bmMuMUEwPwYDVQQDEzhEaWdpQ2VydCBUcnVzdGVkIEc0IENvZGUgU2lnbmluZyBS
+# U0E0MDk2IFNIQTM4NCAyMDIxIENBMTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCC
+# AgoCggIBANW0L0LQKK14t13VOVkbsYhC9TOM6z2Bl3DFu8SFJjCfpI5o2Fz16zQk
+# B+FLT9N4Q/QX1x7a+dLVZxpSTw6hV/yImcGRzIEDPk1wJGSzjeIIfTR9TIBXEmtD
+# mpnyxTsf8u/LR1oTpkyzASAl8xDTi7L7CPCK4J0JwGWn+piASTWHPVEZ6JAheEUu
+# oZ8s4RjCGszF7pNJcEIyj/vG6hzzZWiRok1MghFIUmjeEL0UV13oGBNlxX+yT4Us
+# SKRWhDXW+S6cqgAV0Tf+GgaUwnzI6hsy5srC9KejAw50pa85tqtgEuPo1rn3MeHc
+# reQYoNjBI0dHs6EPbqOrbZgGgxu3amct0r1EGpIQgY+wOwnXx5syWsL/amBUi0nB
+# k+3htFzgb+sm+YzVsvk4EObqzpH1vtP7b5NhNFy8k0UogzYqZihfsHPOiyYlBrKD
+# 1Fz2FRlM7WLgXjPy6OjsCqewAyuRsjZ5vvetCB51pmXMu+NIUPN3kRr+21CiRshh
+# WJj1fAIWPIMorTmG7NS3DVPQ+EfmdTCN7DCTdhSmW0tddGFNPxKRdt6/WMtyEClB
+# 8NXFbSZ2aBFBE1ia3CYrAfSJTVnbeM+BSj5AR1/JgVBzhRAjIVlgimRUwcwhGug4
+# GXxmHM14OEUwmU//Y09Mu6oNCFNBfFg9R7P6tuyMMgkCzGw8DFYRAgMBAAGjggFZ
+# MIIBVTASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBRoN+Drtjv4XxGG+/5h
+# ewiIZfROQjAfBgNVHSMEGDAWgBTs1+OC0nFdZEzfLmc/57qYrhwPTzAOBgNVHQ8B
+# Af8EBAMCAYYwEwYDVR0lBAwwCgYIKwYBBQUHAwMwdwYIKwYBBQUHAQEEazBpMCQG
+# CCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wQQYIKwYBBQUHMAKG
+# NWh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRSb290
+# RzQuY3J0MEMGA1UdHwQ8MDowOKA2oDSGMmh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNv
+# bS9EaWdpQ2VydFRydXN0ZWRSb290RzQuY3JsMBwGA1UdIAQVMBMwBwYFZ4EMAQMw
+# CAYGZ4EMAQQBMA0GCSqGSIb3DQEBDAUAA4ICAQA6I0Q9jQh27o+8OpnTVuACGqX4
+# SDTzLLbmdGb3lHKxAMqvbDAnExKekESfS/2eo3wm1Te8Ol1IbZXVP0n0J7sWgUVQ
+# /Zy9toXgdn43ccsi91qqkM/1k2rj6yDR1VB5iJqKisG2vaFIGH7c2IAaERkYzWGZ
+# gVb2yeN258TkG19D+D6U/3Y5PZ7Umc9K3SjrXyahlVhI1Rr+1yc//ZDRdobdHLBg
+# XPMNqO7giaG9OeE4Ttpuuzad++UhU1rDyulq8aI+20O4M8hPOBSSmfXdzlRt2V0C
+# FB9AM3wD4pWywiF1c1LLRtjENByipUuNzW92NyyFPxrOJukYvpAHsEN/lYgggnDw
+# zMrv/Sk1XB+JOFX3N4qLCaHLC+kxGv8uGVw5ceG+nKcKBtYmZ7eS5k5f3nqsSc8u
+# pHSSrds8pJyGH+PBVhsrI/+PteqIe3Br5qC6/To/RabE6BaRUotBwEiES5ZNq0RA
+# 443wFSjO7fEYVgcqLxDEDAhkPDOPriiMPMuPiAsNvzv0zh57ju+168u38HcT5uco
+# P6wSrqUvImxB+YJcFWbMbA7KxYbD9iYzDAdLoNMHAmpqQDBISzSoUSC7rRuFCOJZ
+# DW3KBVAr6kocnqX9oKcfBnTn8tZSkP2vhUgh+Vc7tJwD7YZF9LRhbr9o4iZghurI
+# r6n+lB3nYxs6hlZ4TjCCBsIwggSqoAMCAQICEAVEr/OUnQg5pr/bP1/lYRYwDQYJ
+# KoZIhvcNAQELBQAwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJ
+# bmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2
+# IFRpbWVTdGFtcGluZyBDQTAeFw0yMzA3MTQwMDAwMDBaFw0zNDEwMTMyMzU5NTla
+# MEgxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjEgMB4GA1UE
+# AxMXRGlnaUNlcnQgVGltZXN0YW1wIDIwMjMwggIiMA0GCSqGSIb3DQEBAQUAA4IC
+# DwAwggIKAoICAQCjU0WHHYOOW6w+VLMj4M+f1+XS512hDgncL0ijl3o7Kpxn3GIV
+# WMGpkxGnzaqyat0QKYoeYmNp01icNXG/OpfrlFCPHCDqx5o7L5Zm42nnaf5bw9Yr
+# IBzBl5S0pVCB8s/LB6YwaMqDQtr8fwkklKSCGtpqutg7yl3eGRiF+0XqDWFsnf5x
+# XsQGmjzwxS55DxtmUuPI1j5f2kPThPXQx/ZILV5FdZZ1/t0QoRuDwbjmUpW1R9d4
+# KTlr4HhZl+NEK0rVlc7vCBfqgmRN/yPjyobutKQhZHDr1eWg2mOzLukF7qr2JPUd
+# vJscsrdf3/Dudn0xmWVHVZ1KJC+sK5e+n+T9e3M+Mu5SNPvUu+vUoCw0m+PebmQZ
+# BzcBkQ8ctVHNqkxmg4hoYru8QRt4GW3k2Q/gWEH72LEs4VGvtK0VBhTqYggT02ke
+# fGRNnQ/fztFejKqrUBXJs8q818Q7aESjpTtC/XN97t0K/3k0EH6mXApYTAA+hWl1
+# x4Nk1nXNjxJ2VqUk+tfEayG66B80mC866msBsPf7Kobse1I4qZgJoXGybHGvPrhv
+# ltXhEBP+YUcKjP7wtsfVx95sJPC/QoLKoHE9nJKTBLRpcCcNT7e1NtHJXwikcKPs
+# CvERLmTgyyIryvEoEyFJUX4GZtM7vvrrkTjYUQfKlLfiUKHzOtOKg8tAewIDAQAB
+# o4IBizCCAYcwDgYDVR0PAQH/BAQDAgeAMAwGA1UdEwEB/wQCMAAwFgYDVR0lAQH/
+# BAwwCgYIKwYBBQUHAwgwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcB
+# MB8GA1UdIwQYMBaAFLoW2W1NhS9zKXaaL3WMaiCPnshvMB0GA1UdDgQWBBSltu8T
+# 5+/N0GSh1VapZTGj3tXjSTBaBgNVHR8EUzBRME+gTaBLhklodHRwOi8vY3JsMy5k
+# aWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkRzRSU0E0MDk2U0hBMjU2VGltZVN0
+# YW1waW5nQ0EuY3JsMIGQBggrBgEFBQcBAQSBgzCBgDAkBggrBgEFBQcwAYYYaHR0
+# cDovL29jc3AuZGlnaWNlcnQuY29tMFgGCCsGAQUFBzAChkxodHRwOi8vY2FjZXJ0
+# cy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkRzRSU0E0MDk2U0hBMjU2VGlt
+# ZVN0YW1waW5nQ0EuY3J0MA0GCSqGSIb3DQEBCwUAA4ICAQCBGtbeoKm1mBe8cI1P
+# ijxonNgl/8ss5M3qXSKS7IwiAqm4z4Co2efjxe0mgopxLxjdTrbebNfhYJwr7e09
+# SI64a7p8Xb3CYTdoSXej65CqEtcnhfOOHpLawkA4n13IoC4leCWdKgV6hCmYtld5
+# j9smViuw86e9NwzYmHZPVrlSwradOKmB521BXIxp0bkrxMZ7z5z6eOKTGnaiaXXT
+# UOREEr4gDZ6pRND45Ul3CFohxbTPmJUaVLq5vMFpGbrPFvKDNzRusEEm3d5al08z
+# jdSNd311RaGlWCZqA0Xe2VC1UIyvVr1MxeFGxSjTredDAHDezJieGYkD6tSRN+9N
+# UvPJYCHEVkft2hFLjDLDiOZY4rbbPvlfsELWj+MXkdGqwFXjhr+sJyxB0JozSqg2
+# 1Llyln6XeThIX8rC3D0y33XWNmdaifj2p8flTzU8AL2+nCpseQHc2kTmOt44Owde
+# OVj0fHMxVaCAEcsUDH6uvP6k63llqmjWIso765qCNVcoFstp8jKastLYOrixRoZr
+# uhf9xHdsFWyuq69zOuhJRrfVf8y2OMDY7Bz1tqG4QyzfTkx9HmhwwHcK1ALgXGC7
+# KP845VJa1qwXIiNO9OzTF/tQa/8Hdx9xl0RBybhG02wyfFgvZ0dl5Rtztpn5aywG
+# Ru9BHvDwX+Db2a2QgESvgBBBijCCB2UwggVNoAMCAQICEAb/8zuyozDu5gaz0U55
+# 6/0wDQYJKoZIhvcNAQELBQAwaTELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lD
+# ZXJ0LCBJbmMuMUEwPwYDVQQDEzhEaWdpQ2VydCBUcnVzdGVkIEc0IENvZGUgU2ln
+# bmluZyBSU0E0MDk2IFNIQTM4NCAyMDIxIENBMTAeFw0yMzA1MDMwMDAwMDBaFw0y
+# NDA1MDMyMzU5NTlaMG0xCzAJBgNVBAYTAkFVMRgwFgYDVQQIEw9OZXcgU291dGgg
+# V2FsZXMxEjAQBgNVBAcTCUFkYW1zdG93bjEXMBUGA1UEChMOR3JlaWcgU2hlcmlk
+# YW4xFzAVBgNVBAMTDkdyZWlnIFNoZXJpZGFuMIICIjANBgkqhkiG9w0BAQEFAAOC
+# Ag8AMIICCgKCAgEAy8w+ZjFnAaxhcmUbpq0Xb9lArLxMWV1QcG/0kHbD3+cAUDlG
+# Rb/w6heYCn+3UV0fT1OshDtoWOfbOdQcW8gk6uTeGI7P7L+apbPczvAGAVPfmXop
+# f6WE0nyV15ZXTwH0CWNaWu+/zG7NHQgZdgNRJCBAR3KPGqL0+ht60Vz0oOfRFOa+
+# FnvznYE2LV0wK/x1dFGT69nFLwxwRA7Rozh1bidQIKPgWC49KDU6JPYLiFlHETSL
+# Y5eDLRM8RNT9uOrxnIErOJ0vXPF1L+lkkqIBOqyU7xTcFmGM605g5okEyMVaLSqi
+# YbbBU77qoG8G2Yp/I45BpD7R4Xhos1SZumzBimWpsw+a9WsIs84Y/Z4Sxi69fx08
+# 6QwVbqm5Gsnh+Ixc1e1S4BbCASffBFMMNS/pyPUAWIPG7no3kukE+nqS5q8fepfA
+# FLvF12FoO69e6DpOdMjZriMeWWFu1I0KZDg3Ow8bJle0umoCp1/BaeNdLRq2i8PU
+# 1rj78Y77TuPVkHMYJSw4XXWBTrOEYz6MBP+ig+xOrPKR8fM7DMoOwGgb6Luz9cXw
+# 07MABrOKIpj4qxRvSVBf5emZi1w3qrWjvnpBUCQFRRLTfHLOk+xgc8BV0aFJmGNg
+# IK3iTLIWEKFEt6WrFZBJjDsjShnDAxCLZ8przZLzP2WsdwE9cCc5gCcYMskCAwEA
+# AaOCAgMwggH/MB8GA1UdIwQYMBaAFGg34Ou2O/hfEYb7/mF7CIhl9E5CMB0GA1Ud
+# DgQWBBQTPM4HUelJVcQ4ZvGopS8JUM+DcjAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0l
+# BAwwCgYIKwYBBQUHAwMwgbUGA1UdHwSBrTCBqjBToFGgT4ZNaHR0cDovL2NybDMu
+# ZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0Q29kZVNpZ25pbmdSU0E0MDk2
+# U0hBMzg0MjAyMUNBMS5jcmwwU6BRoE+GTWh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNv
+# bS9EaWdpQ2VydFRydXN0ZWRHNENvZGVTaWduaW5nUlNBNDA5NlNIQTM4NDIwMjFD
+# QTEuY3JsMD4GA1UdIAQ3MDUwMwYGZ4EMAQQBMCkwJwYIKwYBBQUHAgEWG2h0dHA6
+# Ly93d3cuZGlnaWNlcnQuY29tL0NQUzCBlAYIKwYBBQUHAQEEgYcwgYQwJAYIKwYB
+# BQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBcBggrBgEFBQcwAoZQaHR0
+# cDovL2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0Q29kZVNp
+# Z25pbmdSU0E0MDk2U0hBMzg0MjAyMUNBMS5jcnQwCQYDVR0TBAIwADANBgkqhkiG
+# 9w0BAQsFAAOCAgEAtKpziTjr2E86+XYeht2uPPrnwyCak3acl7L/z34+LccewVvO
+# CdHKJTiyifEr7Loz/sHCa3gF1GG+zOpB5OABZyOa3qzkqd/5qsymJjfGt+u4xyX2
+# d6g4fIfvwtKYi8VcNLDcHwzqukAqMIO1b6I75PHuAHlqg5WeCROf32FQlo8zMI8k
+# 9Kg2j1qJvRzuOn2nU/yliQxbaLXhCTUJO1tlUOTavoleCPWXFYzSILmQAo/dnvpS
+# 35iAXaw2upUMIHR9SVVjxrM6ogMTEmAJb30vrVCSuMyXL+jOJWXb/CXfHWq6TfcY
+# zzSmjvVKDn7cMy2tshZF4GCCSioPXP66WNQVzF3x/InMvbugo6jtxO8bNWWJdeLs
+# zkQoKtAyI5ra6Nf6sDuZfDjQgvJiUpiClr94WFzpx1weOqmse9g0sTApSzmkKMT7
+# t4vJ/yL1LhOgCUTlE+JLKHAuQFFyGopWE0AAUnEy8b/baob7raNxWpkrHQQX93t1
+# o/NOZtRqp9J0zXUZN3kKXOnuLYokdZu4VKnVqVJENnAgPDsPszp93OQp8oJ5SZ+5
+# ENc3UXLL65wk5sa1KkOIk++oz3eN7NhTIRUs2Z7HgWRqFpFzE2fDs2lJQviFWK/L
+# UN4gIxmGws1DTPg467yCL8rkD6hz4b/TJUjU7KdR93AP2rbA58wnA9NJYHwxggZC
+# MIIGPgIBATB9MGkxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5j
+# LjFBMD8GA1UEAxM4RGlnaUNlcnQgVHJ1c3RlZCBHNCBDb2RlIFNpZ25pbmcgUlNB
+# NDA5NiBTSEEzODQgMjAyMSBDQTECEAb/8zuyozDu5gaz0U556/0wCQYFKw4DAhoF
+# AKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisG
+# AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcN
+# AQkEMRYEFOEaEuSfEb9nP32ZZ/R7D1irqbo/MA0GCSqGSIb3DQEBAQUABIICAKzR
+# aaR3RtQgeYsg3yP/jwB8Mz7EvXzZ7VZ+PucuxSiBC+0VJlD4SRnscmuNzetNt9sy
+# lYrvvU1US8kfSwBysAMeAWqmz2ZEM4n2mn6YiucziKtpCSbZAOC8XYlWKSShcAXh
+# UZWNhsEE5XXoFJQ9WXgc6W1+IfBSI5IzK06FtzG2YzJlIZ1CzmHi66jIMU1U1W2U
+# lf7Tk7olaDEQLzZxsL7EGhLkFUdiONyhWWsbKcCCE7Sg+BJFIZoGNmq3ZEgc+jHQ
+# BvJqZupdNwrQ1LayQz2zO30DEHGoMi1sjLGMhN24Gs8D6lMaJUC4BuvshdVF9Er0
+# T/TGTeaecmF5ebsUbGGf/mSkKU6+Ujh8zTfCRPj2OwE5zsCK2S3VhF2od+rjExMU
+# DRO5GZ/qFa65yjN+JMCwY1HZANR5EB/Iaz/fkxrHlGxWvCIxEPHbbuJ/uGUjLTUh
+# vZCknwM/6xo3ziJh0wm0uwf+5kqp4F+badlLspGJeURd0MshpFIdcdg2Iekj/tVU
+# Q/wbtxvH7TYNeTif+qsumS8mJ8IZ724kXHZRf9RDyYs1CYDeJI1pgDJ3BwJV+Wru
+# w3mNPl1/8XrpUmqJruoJ4FpFdBfRdo//W6CXxLul0Uf/fCCC0I7Eq03MBxohUA6E
+# YZvTOzd9huQTYfTDlfPVzAgiE23CeDrhsxcbsGCvoYIDIDCCAxwGCSqGSIb3DQEJ
+# BjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0
+# LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hB
+# MjU2IFRpbWVTdGFtcGluZyBDQQIQBUSv85SdCDmmv9s/X+VhFjANBglghkgBZQME
+# AgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8X
+# DTIzMTAwMzA3NTM0MlowLwYJKoZIhvcNAQkEMSIEIH/u/TKw4wbARzI9uDiXhPH9
+# GjSmYnl7B2IeHQ5GkXkkMA0GCSqGSIb3DQEBAQUABIICAErhFqshlsH1GigITGig
+# ckhLMZAGo876gW3bD1xqdjksHuXkLJRicXIQ7Yy7leKobVwk3CPyXNBnVUV1iLYh
+# rkRuYCtDJ032EekPsALHtzt0X4N6G3l0OMoJekvOTbKEMiO3pxfNl7AoSnAWlfVZ
+# Trorpp0f302rDb44H5taB1DvV3CULeWsig3pXZxf/sAki0mgm3ntWx1qEZc2NcU4
+# dH+7QOkdMXFmGCFgnRu3er8H3nji89bv+7Lr+1o4bJ071qMiN4Dky9wwi210tra9
+# DYf0FZBJCHqqwaFth3fKu6+PTmEIaRSGJBBZOyLqMgsZ78SYEHa1j+WG8wdrlKpf
+# rIrysuAWtYhY6RtfkafVOCeIo8BJfe2Ch3GbwIou0bmdybkCxADvz/BhmEg6OHew
+# FFR6/nnArWqddxGBg6ldDyk55zziYaio3JCzDmFEUtDBbYy+TLzbOurbVFmF1C1C
+# iL0Ui/hxuMrP/wlTvvVCqcIiVk/7c0lyGilkQYabdfaTfor9TbAl4DiOBo3txNd2
+# dPoEztT0Q1omRvDCRIOj7kFZRXSYpNDi50JEWEvFptMzSWh3TGlqn/NnskJSOUj9
+# AOKmF7zsMm5sa7pTbCT+SWKOpoHG2qzyQ3cVTZUDXcD7wcbVaxw3cPR0zzk7KkOU
+# /61AnLSlnxVP0qwOht73pmuv
 # SIG # End signature block
