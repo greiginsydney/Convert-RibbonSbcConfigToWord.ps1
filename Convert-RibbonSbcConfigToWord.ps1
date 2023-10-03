@@ -30,7 +30,7 @@
 					- 'Port ASM1' doesn't show under Node Interfaces / Ports unless NodeInfo.txt is provided, or extracting from .tar
 
 
-	Revision History 	:
+	Revision History:
 
 				v12.0.1 3rd October 2023
 					Added new bits found recently:
@@ -53,7 +53,7 @@
 						- New transformation types added to $InputFieldLookup & $OutputFieldLookup (thanks Mike)
 						- Updated Logging Configuration / Global Log to show for all machine types
 						- Added new 1k 'mirrored port' values to $PortMirrorPortLookup
-					
+
 				v11.0.0 4th February 2022
 					Added new bits in 11.0.0:
 						- 'Enforce SG Codec Priority' in Media List
@@ -547,7 +547,7 @@ begin
 
 	$LinkMonitorHostTypeLookup = @{'0' = 'Host'; '1' = 'Gateway' }
 	$LinkMonitorTypeLookup = @{'0' = 'CAC/IPSEC'; '1' = 'Backup Default Route' }
-	
+
 	$IPSecActivationLookup = @{'0' = 'Always'; '1' = 'Link Monitor Action' }
 	$IPSecEncryptionLookup = @{'0' = 'AES256'; '1' = 'AES128'; '2' = '3DES' }
 	$IPSecIntegrityLookup = @{'0' = 'SHA1'; '1' = 'SHA256' }
@@ -1821,7 +1821,7 @@ begin
 			$PortLicenceColumnTitles = @('Feature', 'Licensed', 'Number of Licensed Ports')
 
 			$FeatureLicenceCollection = @()
-			
+
 			#---------------------------------------------------------------------------------------------------------
 			# The Lite has five columns in this table but the 1k/2k only four. As of v8.1.5 I'm treating all values as
 			# though they have five columns, then leaving it to the very end to decide how many to write to file.
@@ -2143,7 +2143,7 @@ begin
 									if (('Forking') -match $LicenceLine[0]) { continue }
 								}
 							}
-							
+
 							#Now bung the values into one of two separate licence tables:
 							switch ($LicenceLine[0])
 							{
@@ -5276,7 +5276,7 @@ begin
 								{
 									$LocalLogServersCollection += , ('Global Log Level', $LogLevelLookup.Get_Item($LoggingElement.IE.DefaultLevel), '', '')
 									$LocalLogServersCollection += , ('Global Date/Time Format', (Test-ForNull -LookupTable $LogDateTimeLookup -value $LoggingElement.IE.LogDateTimeFormat))
-									
+
 								}
 								$LoggingData += , ('Local Log Configuration', '', '', $LocalLogServersCollection)
 							}
@@ -5350,25 +5350,25 @@ begin
 													$CallCriteriaTable += ,('Rule type', 'Ingress SG', '', '')
 													$CallCriteriaTable += ,('Signaling Groups', $SgTableLookup.Get_Item($ByCallCriteriaTable.IE.SignalingGroupList), '', '')
 												}
-												
+
 												'1' # Remote IP
 												{
 													$CallCriteriaTable += ,('Rule type', 'Remote IP', '', '')
 													$CallCriteriaTable += ,('Remote IP', $ByCallCriteriaTable.IE.RemoteIP, '', '')
 												}
-												
+
 												'2' # Calling Party
 												{
 													$CallCriteriaTable += ,('Rule type', 'Calling Party', '', '')
 													$CallCriteriaTable += ,('Calling Party', $ByCallCriteriaTable.IE.CallingParty, '', '')
 												}
-												
+
 												'3' # Called Party
 												{
 													$CallCriteriaTable += ,('Rule type', 'Called Party', '', '')
 													$CallCriteriaTable += ,('Called Party', $ByCallCriteriaTable.IE.CalledParty, '', '')
 												}
-												
+
 												'4' # Nth GCID
 												{
 													$CallCriteriaTable += ,('Rule type', 'Nth GCID', '', '')
@@ -5504,7 +5504,7 @@ begin
 											#Now the RH
 											$IPSecTunnelR1 += 'SPAN-R'
 											$IPSecTunnelR2 += 'Local Attributes'
-											
+
 											$IPSecTunnelR1 += 'Subject Distinguished Name'
 											$IPSecTunnelR2 += $IPSecTunnelLocalCert #Previously captured from Certificates
 											$IPSecTunnelR1 += 'Subject Alternate Name(s)'
@@ -6558,10 +6558,10 @@ begin
 												$SIPRecL2 += $SIPgroup.IE.Channels
 												$SIPRecL1 += 'SIP profile'
 												$SIPRecL2 += $SipProfileIdLookup.Get_Item($SIPgroup.IE.ProfileID)
-												
+
 												$SIPRecL1 += 'Recording Server Table'
 												$SIPRecL2 += $SIPServerTablesLookup.Get_Item($SIPgroup.IE.ServerClusterId)
-												
+
 												$SIPRecL1 += 'Load Balancing'
 												$SIPRecL2 += $SipLoadBalancingLookup.Get_Item($SIPgroup.IE.ServerSelection)
 												$SIPRecL1 += 'Channel Hunting'
@@ -7697,7 +7697,7 @@ begin
 											}
 											$MediaListTable += ,('Dead Call Detection', $ReverseEnabledLookup.Get_Item($MediaListProfile.IE.DeadCallDetection), '', '')
 											$MediaListTable += ,('Silence Suppression', $ReverseEnabledLookup.Get_Item($MediaListProfile.IE.SilenceSuppression), '', '')
-											$MediaListTable += ,('Enforce SG Codec Priority', (Test-ForNull -LookupTable $EnabledLookup -value $MediaListProfile.IE.EnforceCodecPriority), '', '') 
+											$MediaListTable += ,('Enforce SG Codec Priority', (Test-ForNull -LookupTable $EnabledLookup -value $MediaListProfile.IE.EnforceCodecPriority), '', '')
 											if ($MediaListProfile.IE.CryptoProfileID -ne '0')
 											{
 												if ($MediaListProfile.IE.SrtpROC -eq $null)
@@ -9986,7 +9986,7 @@ begin
 							#$SNMPData += , ('TCA Configuration', '', $TCAStatisticsColumnTitles, $TCAStatisticsCollection)
 						}
 					}
-					
+
 					#---------- Notification Service ------------------------
 					'NotificationService'
 					{
@@ -10015,7 +10015,7 @@ begin
 											$NotificationTable += ,('Secret', '****', '' , '')
 											$NotificationTable += ,('Monitoring Interval', ($NotificationProfile.IE.MonitoringInterval + ' hours'), '' , '')
 											$NotificationTable += ,('Events', (Test-ForNull -LookupTable $NotificationEventsLookup -value $NotificationProfile.IE.Events), '' , '')
-											$E911Recipients = [regex]::replace($NotificationProfile.IE.E911RecipientsList, ',' , "`n") # Write each recipient on a new line 
+											$E911Recipients = [regex]::replace($NotificationProfile.IE.E911RecipientsList, ',' , "`n") # Write each recipient on a new line
 											$NotificationTable += ,('E911 Recipients List', $E911Recipients, '' , '')
 											$NotificationTable += ,('E911 Message', $NotificationProfile.IE.E911Message, '' , '')
 										}
@@ -10602,8 +10602,8 @@ end
 # SIG # Begin signature block
 # MIIn/gYJKoZIhvcNAQcCoIIn7zCCJ+sCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUGRq/TPoWvzbYua7qX4jBQafk
-# 0AiggiEmMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUY8o10pvHlh9QdASpYDGWWOzS
+# EqaggiEmMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -10785,33 +10785,33 @@ end
 # NDA5NiBTSEEzODQgMjAyMSBDQTECEAb/8zuyozDu5gaz0U556/0wCQYFKw4DAhoF
 # AKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcN
-# AQkEMRYEFI6IfZnGf9acm9PDI78arTre4RncMA0GCSqGSIb3DQEBAQUABIICAMFW
-# E1bvRQJAooFmyxD8DKYpGZR5jYuvNcGwJAdi8ElkIAB3TvwFJNITSCp4XetLcobh
-# aTmDYtHHq9xKU50/bfvWK9aRWddvVrhlg6IK5kMtF2H58qPMGUOCMbXlCUZQlPcL
-# gcTKSJH4kJBz9NEO2USd6aFgufEJFcD+jOY5dEZ1VRuN/AMIFmlm/SfaIAD+lTPb
-# 4PN2wPwyj5RaWrFYmsUZDSI6t1DTDzqlumDJKmHcpzmRxLkVe6FvbUw06eQNcSMo
-# 8qtA1glQ3IpaMtLCZM6uMYaxHJ3NGBIGv64ZEkZYEqihs3b8pEXk6bHQwrwZQ2p/
-# ZZY1MVBU2OfIezsZl3m5zFsAfeXjfCUOZp9jBgQCxSq5EIZMabs8jGMexf+GUJKD
-# XzhFGIBxz38tZdzIerZqwuhi7tWz//tBY0ZA6CVanzE/ErPMATa7qDif+ay4ty3x
-# YWWzrSQo8W+T9ryQVCA32gZAsEkwZeNDavDpvqQ/53fYQssZJIbSmb40rQOU1lux
-# El1H/ipHArhjzG1kbh4QP9ACupltlifLg7cS04sTaJC1Ft+Vjn53A/S07rfZuDLs
-# 3GgrvmeKFIxop3BuJEs5bMA0C02mA/JBUnGRoN1JKgbn3G55EcIaR/pypkG9n7T8
-# Yya0SPc/i7bHcCfQb93Gwxtv3vKwMIdTd7WOhTBAoYIDIDCCAxwGCSqGSIb3DQEJ
+# AQkEMRYEFOEaEuSfEb9nP32ZZ/R7D1irqbo/MA0GCSqGSIb3DQEBAQUABIICAKzR
+# aaR3RtQgeYsg3yP/jwB8Mz7EvXzZ7VZ+PucuxSiBC+0VJlD4SRnscmuNzetNt9sy
+# lYrvvU1US8kfSwBysAMeAWqmz2ZEM4n2mn6YiucziKtpCSbZAOC8XYlWKSShcAXh
+# UZWNhsEE5XXoFJQ9WXgc6W1+IfBSI5IzK06FtzG2YzJlIZ1CzmHi66jIMU1U1W2U
+# lf7Tk7olaDEQLzZxsL7EGhLkFUdiONyhWWsbKcCCE7Sg+BJFIZoGNmq3ZEgc+jHQ
+# BvJqZupdNwrQ1LayQz2zO30DEHGoMi1sjLGMhN24Gs8D6lMaJUC4BuvshdVF9Er0
+# T/TGTeaecmF5ebsUbGGf/mSkKU6+Ujh8zTfCRPj2OwE5zsCK2S3VhF2od+rjExMU
+# DRO5GZ/qFa65yjN+JMCwY1HZANR5EB/Iaz/fkxrHlGxWvCIxEPHbbuJ/uGUjLTUh
+# vZCknwM/6xo3ziJh0wm0uwf+5kqp4F+badlLspGJeURd0MshpFIdcdg2Iekj/tVU
+# Q/wbtxvH7TYNeTif+qsumS8mJ8IZ724kXHZRf9RDyYs1CYDeJI1pgDJ3BwJV+Wru
+# w3mNPl1/8XrpUmqJruoJ4FpFdBfRdo//W6CXxLul0Uf/fCCC0I7Eq03MBxohUA6E
+# YZvTOzd9huQTYfTDlfPVzAgiE23CeDrhsxcbsGCvoYIDIDCCAxwGCSqGSIb3DQEJ
 # BjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0
 # LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hB
 # MjU2IFRpbWVTdGFtcGluZyBDQQIQBUSv85SdCDmmv9s/X+VhFjANBglghkgBZQME
 # AgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8X
-# DTIzMTAwMzA3NTA0MVowLwYJKoZIhvcNAQkEMSIEIBQae3asdFBVCvTqZRZtMJgS
-# iWEgH9sBuXU+FSuNNXyHMA0GCSqGSIb3DQEBAQUABIICAFFVEPZNrS3JBi2thA4K
-# xRu4eEsuhpYN5Aq/gho6B/atahhj49SvgrkBqau5TDoW6PZufePl8/RjBDUCeh8Y
-# f5dU7UqI+boR6QI9lws60OzbX0juNnq1eWvvTZC+XaXoE1AjmLCEfOFSNhRJ0GhU
-# PMu/ITG6VUrZeXgupMoh6LMOoCNiMd/GjLIvJZg9n8U+aBujrL0o/GAim0ZBkNbG
-# fxQQj4NbX1NjAKnHLHb+RZlZhQ/bxWkq7yaD8i8msmOdMuYGBdXytpb/k1patdo4
-# cGwWh1W/6vPxDGdRqZSPWLROwA9AE4BYZ6+yzYFAZxRtvjQEtdzFfUDfRl2xHRr8
-# gonyYQ5mSLs1Z8XOGvEzex3zTInHsZ/kidms8ENxunqbEpdUIeCT/WOh7G7Nu1ki
-# DkyuxZo65q+pKSP9zDwMYYrnIoz9LDj8M+Djaks++ekh6jf7Ml0/sRa0VS78FB+f
-# MYqFKXozS+vcAN7rVXxc9+LeRz+9a1ywHpuQVRhXw6tTZ8lzm3kCCVfyPXP+bQlj
-# zDZrlQg20xFFxE/ssdwf8sEfurZpmOdEgdTu3hv1OKXs1i6xWODADUGyRTcEQsUs
-# wA4w2KjTpL2hIgCf6DFxuhHJEwlWprItKbBzrhx0rffRsZdW9qbf5I9E4iXkOi2l
-# HZNRo3il7G7oAg/ldoIZ2yRA
+# DTIzMTAwMzA3NTM0MlowLwYJKoZIhvcNAQkEMSIEIH/u/TKw4wbARzI9uDiXhPH9
+# GjSmYnl7B2IeHQ5GkXkkMA0GCSqGSIb3DQEBAQUABIICAErhFqshlsH1GigITGig
+# ckhLMZAGo876gW3bD1xqdjksHuXkLJRicXIQ7Yy7leKobVwk3CPyXNBnVUV1iLYh
+# rkRuYCtDJ032EekPsALHtzt0X4N6G3l0OMoJekvOTbKEMiO3pxfNl7AoSnAWlfVZ
+# Trorpp0f302rDb44H5taB1DvV3CULeWsig3pXZxf/sAki0mgm3ntWx1qEZc2NcU4
+# dH+7QOkdMXFmGCFgnRu3er8H3nji89bv+7Lr+1o4bJ071qMiN4Dky9wwi210tra9
+# DYf0FZBJCHqqwaFth3fKu6+PTmEIaRSGJBBZOyLqMgsZ78SYEHa1j+WG8wdrlKpf
+# rIrysuAWtYhY6RtfkafVOCeIo8BJfe2Ch3GbwIou0bmdybkCxADvz/BhmEg6OHew
+# FFR6/nnArWqddxGBg6ldDyk55zziYaio3JCzDmFEUtDBbYy+TLzbOurbVFmF1C1C
+# iL0Ui/hxuMrP/wlTvvVCqcIiVk/7c0lyGilkQYabdfaTfor9TbAl4DiOBo3txNd2
+# dPoEztT0Q1omRvDCRIOj7kFZRXSYpNDi50JEWEvFptMzSWh3TGlqn/NnskJSOUj9
+# AOKmF7zsMm5sa7pTbCT+SWKOpoHG2qzyQ3cVTZUDXcD7wcbVaxw3cPR0zzk7KkOU
+# /61AnLSlnxVP0qwOht73pmuv
 # SIG # End signature block
