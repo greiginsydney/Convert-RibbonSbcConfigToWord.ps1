@@ -75,6 +75,17 @@ PS H:\> Get-ChildItem "d:\path\*.tar" -recurse | .\Convert-RibbonSbcConfigToWord
 
 ### (Read about older versions <a href="https://greiginsydney.com/uxbuilder" target="_blank"> on my blog</a>)
 
+#### v12.1.0 22nd April 2024
+- Added new bits in 12.1.0:
+    - New TLS ciphers added to Security / TLS Profiles / Client & Server Cipher Lists
+    - 'OPTIONS mode' added to SIP SigGps
+    - 'TcpKeepAlive' to SIP Server Tables
+    - 'OptionPassthrugh[SIC]' to SIP Profiles
+    - New protocols to $TlsProtocolLookup (for TLS Profiles)
+    - 'Server Cipher List' in TLS profiles
+- Fixed bugs:
+    - '<n/a> this rls' :-)
+
 ####  v12.0.1 3rd October 2023
 - Added new bits found recently:
     - New values to $NumberTypeLookup, and renamed to $ClgNumberTypeLookup
