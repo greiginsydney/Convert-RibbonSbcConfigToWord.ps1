@@ -14,9 +14,9 @@
 	It will run with no command-line parameters and assumes default values for the source and destination files.
 
 .NOTES
-	Version				: 12.0.1
-	Date				: 3rd October 2023
-	Gateway versions	: 2.1.1 - 12.0.1
+	Version				: 12.1.0
+	Date				: 22nd April 2024
+	Gateway versions	: 2.1.1 - 12.1.0
 	Author				: Greig Sheridan
 	There are lots of credits at the bottom of the script
 
@@ -31,6 +31,17 @@
 
 
 	Revision History:
+
+				v12.1.0 22nd April 2024
+					Added new bits in 12.1.0:
+						New TLS ciphers added to Security / TLS Profiles / Client & Server Cipher Lists
+						'OPTIONS mode' added to SIP SigGps
+						'TcpKeepAlive' to SIP Server Tables
+						'OptionPassthrugh[SIC]' to SIP Profiles
+						New protocols to $TlsProtocolLookup (for TLS Profiles)
+						'Server Cipher List' in TLS profiles
+					Fixed bugs:
+						'<n/a> this rls' :-)
 
 				v12.0.1 3rd October 2023
 					Added new bits found recently:
@@ -381,7 +392,7 @@ param(
 begin
 {
 
-	[System.Version]$ScriptVersion = '12.0.1'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
+	[System.Version]$ScriptVersion = '12.1.0'  #Written to the title page of the document & also used in Get-UpdateInfo (as of v7.0)
 	$Error.Clear()		  #Clear PowerShell's error variable
 	$Global:Debug = $psboundparameters.debug.ispresent
 
@@ -389,11 +400,11 @@ begin
 	# Setup hash tables--------------
 	#--------------------------------
 
-	$EnabledLookup= @{'0' = 'Disabled'; '1' = 'Enabled'; '2' = 'Drain'} #Used everywhere (Drain only used in Sig Gps)
-	$ReverseEnabledLookup= @{'0' = 'Enabled'; '1' = 'Disabled'} #Seriously - Media list profiles, this is backwards!
-	$EnableLookup= @{'0' = 'Disable'; '1' = 'Enable'}	#Used in multiple places. (Pedantic?)
-	$TrueFalseLookup= @{'0' = 'False'; '1' = 'True'}	 #Used everywhere
-	$YesNoLookup= @{'0' = 'No'; '1' = 'Yes'}			 #Used everywhere
+	$EnabledLookup = @{'0' = 'Disabled'; '1' = 'Enabled'; '2' = 'Drain'} #Used everywhere (Drain only used in Sig Gps)
+	$ReverseEnabledLookup = @{'0' = 'Enabled'; '1' = 'Disabled'} #Seriously - Media list profiles, this is backwards!
+	$EnableLookup = @{'0' = 'Disable'; '1' = 'Enable'}	#Used in multiple places. (Pedantic?)
+	$TrueFalseLookup = @{'0' = 'False'; '1' = 'True'}	 #Used everywhere
+	$YesNoLookup = @{'0' = 'No'; '1' = 'Yes'}			 #Used everywhere
 
 	$FXSFXOCountryLookup = @{'1' = 'Australia'; '2' = 'Austria'; '3' = 'Belgium'; '4' = 'Brazil'; '5' = 'China'; '6' = 'Czech Republic'; '7' = 'Denmark'; '8' = 'Finland'; '9' = 'France'; '10' = 'Germany'; '11' = 'Switzerland'; '12' = 'Greece'; '13' = 'Hungary'; '14' = 'India'; '15' = 'Italy'; '16' = 'Japan'; '17' = 'Korea (ROK)'; '18' = 'Mexico'; '19' = 'Netherlands'; '20' = 'Kiwi Land'; '21' = 'Nigeria'; '22' = 'Norway'; '23' = 'Portugal'; '24' = 'Russia'; '25' = 'Saudi Arabia'; '26' = 'Slovakia'; '27' = 'South Africa'; '28' = 'Spain'; '29' = 'Sweden'; '30' = 'Taiwan'; '31' = 'Turkey'; '32' = 'United Kingdom'; '33' = 'United States'; '70' = 'United Arab Emirates'; '71' = 'Yemen'; '72' = 'Other'; '73' = 'Other European (TBR-21)'}
 	$FXORingDetectLookup = @{'0' = '17'; '2' = '24'; '3' = '50'}
@@ -410,7 +421,7 @@ begin
 	$RelayConfigStateLookup = @{'0' = 'Online'; '1' = 'Passthrough'; '2' = 'Powerdown Passthrough'}
 
 	#Translations & Transformations
-	$InputFieldLookup  = @{'0' = 'Called Address/Number'; '1' = 'Called Numbering Type'; '2' = 'Called Numbering Plan'; '3' = 'Calling Address/Number'; '4' = 'Calling Numbering Type'; '5' = 'Calling Numbering Plan'; '6' = 'Calling Number Presentation'; '7' = 'Calling Number Screening'; '8' = 'Calling Name'; '9' = 'Original Called Number'; '10' = 'Redirecting Number'; '11' = 'Redirecting Number Type'; '12' = 'Redirecting Numbering Plan'; '13' = 'Transfer Capability'; '14' = 'User Value 1'; '15' = 'User Value 2'; '16' = 'User Value 3'; '17' = 'User Value 4'; '18' = 'User Value 5'; '19' = 'Calling Number, User Specified'; '20' = 'ELIN Identifier'; '21' = 'Called Extension'; '22' = 'Calling Extension'; '23' = 'Called Phone Context'; '24' = 'Calling Phone Context'; '25' = 'Original Destination Number'; '26' = 'Callback Pool Identifier'; '27' = 'SG User Value 1'; '28' = 'SG User Value 2'; '29' = 'SG User Value 3'; '30' = 'SG User Value 4'; '31' = 'SG User Value 5'; '32' = 'Called SubAddress/Number'; '33' = 'Calling SubAddress/Number'; '34' = 'Destination Trunk Group'; '35' = 'Connected Name'; '36' = 'Presence: Called Address/Number'; '37' = 'Presence: Calling Address/Number'; '38' = 'Called Free Phone Number'; '39' = 'SIP: Contact Domain'; '40' = 'SIP: R-URI Domain'; '41' = 'Host Name'; '42' = 'Local Registered User Name'}
+	$InputFieldLookup = @{'0' = 'Called Address/Number'; '1' = 'Called Numbering Type'; '2' = 'Called Numbering Plan'; '3' = 'Calling Address/Number'; '4' = 'Calling Numbering Type'; '5' = 'Calling Numbering Plan'; '6' = 'Calling Number Presentation'; '7' = 'Calling Number Screening'; '8' = 'Calling Name'; '9' = 'Original Called Number'; '10' = 'Redirecting Number'; '11' = 'Redirecting Number Type'; '12' = 'Redirecting Numbering Plan'; '13' = 'Transfer Capability'; '14' = 'User Value 1'; '15' = 'User Value 2'; '16' = 'User Value 3'; '17' = 'User Value 4'; '18' = 'User Value 5'; '19' = 'Calling Number, User Specified'; '20' = 'ELIN Identifier'; '21' = 'Called Extension'; '22' = 'Calling Extension'; '23' = 'Called Phone Context'; '24' = 'Calling Phone Context'; '25' = 'Original Destination Number'; '26' = 'Callback Pool Identifier'; '27' = 'SG User Value 1'; '28' = 'SG User Value 2'; '29' = 'SG User Value 3'; '30' = 'SG User Value 4'; '31' = 'SG User Value 5'; '32' = 'Called SubAddress/Number'; '33' = 'Calling SubAddress/Number'; '34' = 'Destination Trunk Group'; '35' = 'Connected Name'; '36' = 'Presence: Called Address/Number'; '37' = 'Presence: Calling Address/Number'; '38' = 'Called Free Phone Number'; '39' = 'SIP: Contact Domain'; '40' = 'SIP: R-URI Domain'; '41' = 'Host Name'; '42' = 'Local Registered User Name'}
 	$OutputFieldLookup = @{'0' = 'Called Address/Number'; '1' = 'Called Numbering Type'; '2' = 'Called Numbering Plan'; '3' = 'Calling Address/Number'; '4' = 'Calling Numbering Type'; '5' = 'Calling Numbering Plan'; '6' = 'Calling Number Presentation'; '7' = 'Calling Number Screening'; '8' = 'Calling Name'; '9' = 'Original Called Number'; '10' = 'Redirecting Number'; '11' = 'Redirecting Number Type'; '12' = 'Redirecting Numbering Plan'; '13' = 'Transfer Capability'; '14' = 'User Value 1'; '15' = 'User Value 2'; '16' = 'User Value 3'; '17' = 'User Value 4'; '18' = 'User Value 5'; '19' = 'Calling Number, User Specified'; '20' = 'ELIN Identifier'; '21' = 'Called Extension'; '22' = 'Calling Extension'; '23' = 'Called Phone Context'; '24' = 'Calling Phone Context'; '25' = 'Original Destination Number'; '26' = 'Callback Pool Identifier'; '27' = 'SG User Value 1'; '28' = 'SG User Value 2'; '29' = 'SG User Value 3'; '30' = 'SG User Value 4'; '31' = 'SG User Value 5'; '32' = 'Called SubAddress/Number'; '33' = 'Calling SubAddress/Number'; '34' = 'Destination Trunk Group'; '35' = 'Connected Name'; '36' = 'Presence: Called Address/Number'; '37' = 'Presence: Calling Address/Number'; '38' = 'Called Free Phone Number'; '39' = 'SIP: Contact Domain'; '40' = 'SIP: R-URI Domain'; '41' = 'Host Name'; '42' = 'Local Registered User Name'}
 	$ClgNumberTypeLookup = @{'-1' = 'Any/Untranslated'; '0' = 'Unknown' ; '1' = 'Subscriber'; '2' = 'National'; '3' = 'Network-Specific'; '4' = 'Abbreviated'; '5' = 'International'; '6' = 'H.323 ID or SIP'}
 	$CldNumberTypeLookup = @{'-1' = 'Any/Untranslated'; '0' = 'Unknown' ; '1' = 'Subscriber'; '2' = 'National'; '3' = 'Network-Specific'; '4' = 'Abbreviated'; '5' = 'International'; '6' = 'Subscriber (Oper. Req.)'; '7' = 'National (Oper. Req.)'; '8' = 'International (Oper. Req.)'; '9' = 'Not Present (Oper. Req.)'; '10' = 'Not Present (Cut Through)'; '11' = '950 Call '; '12' = 'Test Line Test Code'; '13' = 'H.323 ID or SIP'}
@@ -575,8 +586,9 @@ begin
 	$RemoteAuthFromURILookup = @{'0' = 'Authentication ID'; '1' = 'Regex'}
 
 	$TlsClientCipherLookup = @{'1' = 'AES128-SHA'; '2' = 'DES-CBC3-SHA'; '3' = 'AES128-SHA, DES-CBC3-SHA'; '4' = 'DES-CBC-SHA'; '5' = 'AES128-SHA, DES-CBC3-SHA, DES-CBC-SHA'}
-	$TlsClientCipherLookupV4 = @{'0' = 'TLS_RSA_WITH_AES128_CBC_SHA'; '1' = 'TLS_RSA_WITH_AES256_CBC_SHA'; '2' = 'TLS_RSA_WITH_3DES_EDE_CBC_SHA'; '3' = 'TLS_RSA_WITH_AES_128_CBC_SHA256'; '4' = 'TLS_RSA_WITH_AES_256_CBC_SHA256'; '5' = 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'; '6' = 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384'; '7' = 'TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA'; '9' = 'TLS_ECDHE_RSA_AES128_GCM_SHA256'; '10' = 'TLS_ECDHE_RSA_AES256_GCM_SHA384'}
-	$TlsProtocolLookup = @{'0' = 'TLS 1.2 Only'; '1' = 'TLS 1.0 Only'; '2' = 'TLS 1.0-1.2'}
+	$TlsClientCipherLookupV4 = @{'0' = 'TLS_RSA_WITH_AES128_CBC_SHA'; '1' = 'TLS_RSA_WITH_AES256_CBC_SHA'; '2' = 'TLS_RSA_WITH_3DES_EDE_CBC_SHA'; '3' = 'TLS_RSA_WITH_AES_128_CBC_SHA256'; '4' = 'TLS_RSA_WITH_AES_256_CBC_SHA256';	'5' = 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'; '6' = 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384'; '7' = 'TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA'; '9' = 'TLS_ECDHE_RSA_AES128_GCM_SHA256'; '10' = 'TLS_ECDHE_RSA_AES256_GCM_SHA384';
+	'11' = 'TLS_AES_128_GCM_SHA256'; '12' = 'TLS_AES_256_GCM_SHA384'; '13' = 'TLS_CHACHA20_POLY1305_SHA256'}
+	$TlsProtocolLookup = @{'0' = 'TLS 1.2 Only'; '1' = 'TLS 1.0 Only'; '2' = 'TLS 1.0-1.2'; '3' = 'TLS 1.0-1.3'; '4' = 'TLS 1.2-1.3'; '5' = 'TLS 1.3 Only'; '6' = '<Unhandled Value>'; '7' = '<Unhandled Value>'}
 	$DTLSHashTypeLookup = @{'1' = 'DTLS_MEDIA_CRYPT0_HASH_SHA1'; '2' = 'DTLS_MEDIA_CRYPTO_HASH_SHA224'; '3' = 'DTLS_MEDIA_CRYPTO_HASH_SHA256'; '4' = 'DTLS_MEDIA_CRYPTO_HASH_SHA384'; '5' = 'DTLS_MEDIA_CRYPTO_HASH_SHA512'; '6' = 'DTLS_MEDIA_CRYPT0_HASH_MD5';}
 	$BadActorTypeLookup = @{'0' = 'Calling Number'; '1' = 'Called Number'; '2' = 'IPv4 Address'; '3' = 'IPv6 Address'}
 
@@ -5166,6 +5178,22 @@ begin
 										}
 										$TlsProfileTable += ,('SPAN-L', 'Server Attribute', '' , '')
 										#$TlsProfileTable += ,('Fallback Compatible Mode', (testForNull $EnabledLookup $TlsProfile.IE.FallbackCompatibleMode), '' , '')
+										
+										
+										if ($TlsProfile.IE.ServerCipherSequence -ne $null)
+										{
+											$TlsServerCipherSequence = $null
+											$TlsServerCipherList = ($TlsProfile.IE.ServerCipherSequence).Split(',') #Value in the file is formatted as '0,2'
+											foreach ($TlsClientCipher in $TlsServerCipherList)
+											{
+												$TlsServerCipherSequence += ($TlsClientCipherLookupV4.Get_Item($TlsClientCipher) + "`n") # Server & Client share the same cipher list
+											}
+											$TlsServerCipherSequence = Strip-TrailingCR -DelimitedString $TlsServerCipherSequence
+											$TlsProfileTable += ,('Server Cipher List', $TlsServerCipherSequence, '' , '')
+										}
+										
+										
+										
 										if ($TlsProfile.IE.MutualAuth -eq '1')
 										{
 											$TlsProfileTable += ,('Validate Client FQDN', $EnabledLookup.Get_Item($TlsProfile.IE.ValidateClientFQDN), '' , '')
@@ -6034,6 +6062,20 @@ begin
 																	$SIPSgL2 += $SIPgroup.IE.RegistrantTTL
 																}
 																default { $SIPSgL2 += '<Unhandled Value>' }
+															}
+														}
+														$SIPSgL1 += 'OPTIONS Mode'
+														if ($SIPgroup.IE.OptionsMonitor -eq $null)
+														{
+															$SIPSgL2 += '<n/a this rls>'
+														}
+														else
+														{
+															switch ($SIPgroup.IE.OptionsMonitor)
+															{
+																'0'		{ $SIPSgL2 += 'Standard' }
+																'1'		{ $SIPSgL2 += 'Forward' }
+																default	{ $SIPSgL2 += '<Unhandled Value>' }
 															}
 														}
 														$SIPSgL1 += 'SIP Server Table'
@@ -8522,6 +8564,20 @@ begin
 																$SSTableL2 += 'Liberal'
 															}
 														}
+														if ($SIPServer.IE.Protocol -ne '1') #(Do for everything *except* UDP)
+														{
+															if ($SIPServer.IE.TcpKeepAlive -ne $null)
+															{
+																$SSTableL1 += 'SPAN-L'
+																$SSTableL2 += 'TCP KeepAlive'
+																$SSTableL1 += 'Keep Alive'
+																$SSTableL2 += $TrueFalseLookup.Get_Item($SIPServer.IE.TcpKeepAlive)
+																$SSTableL1 += 'Count'
+																$SSTableL2 += $SIPServer.IE.KaCnt + ' [1..10]'
+																$SSTableL1 += 'Interval'
+																$SSTableL2 += $SIPServer.IE.KaIntval + ' secs [1..300]'
+															}
+														}
 														#RH:
 														if ($SIPServer.IE.Protocol -ne '1') #(Do for everything *except* UDP)
 														{
@@ -8890,6 +8946,21 @@ begin
 											}
 											$SipProfilesL1 += 'FQDN in From Header'
 											$SipProfilesL2 += Test-ForNull -LookupTable $SipProfileFrmHdrLookup -value $SIPProfile.IE.FQDNinFromHeader
+											
+											$SipProfilesL1 += 'Options Passthrugh'
+											if ($SIPProfile.IE.OptionPassthrugh -eq $null)
+											{
+												$SipProfilesL2 += '<n/a this rls>'
+											}
+											else
+											{
+												switch ($SIPProfile.IE.OptionPassthrugh)
+												{
+													'0' 	{ $SipProfilesL2 += 'B2BUA' }
+													'1' 	{ $SipProfilesL2 += 'Access UA' }
+													default { $SipProfilesL2 += '<Unhandled Value>'}
+												}
+											}
 											if (($SIPProfile.IE.FQDNinFromHeader -eq '3') -or ($SIPProfile.IE.FQDNinContactHeader -eq '3'))
 											{
 												$SipProfilesL1 += 'Static Host FQDN/IP[:port]'
@@ -9115,18 +9186,9 @@ begin
 											if ($MessageRuleTable.IE.classname -eq $null) { continue } # Empty / deleted entry
 											switch ($MessageRuleTable.IE.MessageType)
 											{
-												'0'
-												{
-													$MessageRuleMessageType = 'All Messages'
-												}
-												'1'
-												{
-													$MessageRuleMessageType = 'All Requests'
-												}
-												'2'
-												{
-													$MessageRuleMessageType = 'All Responses'
-												}
+												'0'	{ $MessageRuleMessageType = 'All Messages' }
+												'1'	{ $MessageRuleMessageType = 'All Requests' }
+												'2'	{ $MessageRuleMessageType = 'All Responses' }
 												'3'
 												{
 													$MessageRuleMessageType = "Selected Messages:`n"
@@ -10602,8 +10664,8 @@ end
 # SIG # Begin signature block
 # MIIn/gYJKoZIhvcNAQcCoIIn7zCCJ+sCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUY8o10pvHlh9QdASpYDGWWOzS
-# EqaggiEmMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUrXYAOGv4r60d0tllbctDLOYt
+# RzqggiEmMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -10785,33 +10847,33 @@ end
 # NDA5NiBTSEEzODQgMjAyMSBDQTECEAb/8zuyozDu5gaz0U556/0wCQYFKw4DAhoF
 # AKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcN
-# AQkEMRYEFOEaEuSfEb9nP32ZZ/R7D1irqbo/MA0GCSqGSIb3DQEBAQUABIICAKzR
-# aaR3RtQgeYsg3yP/jwB8Mz7EvXzZ7VZ+PucuxSiBC+0VJlD4SRnscmuNzetNt9sy
-# lYrvvU1US8kfSwBysAMeAWqmz2ZEM4n2mn6YiucziKtpCSbZAOC8XYlWKSShcAXh
-# UZWNhsEE5XXoFJQ9WXgc6W1+IfBSI5IzK06FtzG2YzJlIZ1CzmHi66jIMU1U1W2U
-# lf7Tk7olaDEQLzZxsL7EGhLkFUdiONyhWWsbKcCCE7Sg+BJFIZoGNmq3ZEgc+jHQ
-# BvJqZupdNwrQ1LayQz2zO30DEHGoMi1sjLGMhN24Gs8D6lMaJUC4BuvshdVF9Er0
-# T/TGTeaecmF5ebsUbGGf/mSkKU6+Ujh8zTfCRPj2OwE5zsCK2S3VhF2od+rjExMU
-# DRO5GZ/qFa65yjN+JMCwY1HZANR5EB/Iaz/fkxrHlGxWvCIxEPHbbuJ/uGUjLTUh
-# vZCknwM/6xo3ziJh0wm0uwf+5kqp4F+badlLspGJeURd0MshpFIdcdg2Iekj/tVU
-# Q/wbtxvH7TYNeTif+qsumS8mJ8IZ724kXHZRf9RDyYs1CYDeJI1pgDJ3BwJV+Wru
-# w3mNPl1/8XrpUmqJruoJ4FpFdBfRdo//W6CXxLul0Uf/fCCC0I7Eq03MBxohUA6E
-# YZvTOzd9huQTYfTDlfPVzAgiE23CeDrhsxcbsGCvoYIDIDCCAxwGCSqGSIb3DQEJ
+# AQkEMRYEFAGUce0Uusc8j/l6W7V3kUvu96A7MA0GCSqGSIb3DQEBAQUABIICABXK
+# zCT8kpe8YuqOCsxDqTELWKzQu0gTkoP9lskwu8pE+PKf4e6P6GZhZoNgk1VryvKE
+# 0ln1WGAoxDPnbOwRhBj0RTrWA5AFPh9NPv4hKkR1S6B8R/uiTN61pEa3C7dIjXTm
+# Z7hMeRFCyDIDTpLcOWicRLGUn04iIPEdzgcbiFMRVrYL8ATm3V2eC/YvXmRWIpDg
+# B+7Y/ttOcu1OFS2iwKBAAvxaXNMzdQbLDZINcN9BCNn7/OtdQWDqu7bmUMWrMpQJ
+# pc631NfnVK7PEXZNl6CvDm8y0KZEzYkHmayjgOhK4UE272amd15x03036OIHI5Ev
+# vXVCWcCeRDYrQ5SSkw8dO2BI7d+PZbAtYEXvqMazjKGLF7fhBdqzVRsBb6qO0azb
+# q5w+F62tQFlNBwVbXbBU4pGcBZ4aJk12ZmNaX4mREypaofL7bF+qY30kFw8VN26g
+# Sb9BFlf+CGxKQJ7nY/R5oc0F70kmF1nbrvo3Br7+2y0mfM1kqsa3Yx0KiPjxKtIY
+# 4opESDn/zqHMq3LC3utEhmI50KpuV9mp0Y5Ds1C0zJGWZzq5acE8J9pKVwVjVCnu
+# Rj9n4l0a2Z7zpN+/1b7ncfq79PyrGPViNyYiEvhinjMrZ5kZAW4Z7CllJyaoH7AC
+# ViE1BsstVYsP2S9Mo3lM+XvT4jYdAEeTIMXY/hiwoYIDIDCCAxwGCSqGSIb3DQEJ
 # BjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0
 # LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hB
 # MjU2IFRpbWVTdGFtcGluZyBDQQIQBUSv85SdCDmmv9s/X+VhFjANBglghkgBZQME
 # AgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8X
-# DTIzMTAwMzA3NTM0MlowLwYJKoZIhvcNAQkEMSIEIH/u/TKw4wbARzI9uDiXhPH9
-# GjSmYnl7B2IeHQ5GkXkkMA0GCSqGSIb3DQEBAQUABIICAErhFqshlsH1GigITGig
-# ckhLMZAGo876gW3bD1xqdjksHuXkLJRicXIQ7Yy7leKobVwk3CPyXNBnVUV1iLYh
-# rkRuYCtDJ032EekPsALHtzt0X4N6G3l0OMoJekvOTbKEMiO3pxfNl7AoSnAWlfVZ
-# Trorpp0f302rDb44H5taB1DvV3CULeWsig3pXZxf/sAki0mgm3ntWx1qEZc2NcU4
-# dH+7QOkdMXFmGCFgnRu3er8H3nji89bv+7Lr+1o4bJ071qMiN4Dky9wwi210tra9
-# DYf0FZBJCHqqwaFth3fKu6+PTmEIaRSGJBBZOyLqMgsZ78SYEHa1j+WG8wdrlKpf
-# rIrysuAWtYhY6RtfkafVOCeIo8BJfe2Ch3GbwIou0bmdybkCxADvz/BhmEg6OHew
-# FFR6/nnArWqddxGBg6ldDyk55zziYaio3JCzDmFEUtDBbYy+TLzbOurbVFmF1C1C
-# iL0Ui/hxuMrP/wlTvvVCqcIiVk/7c0lyGilkQYabdfaTfor9TbAl4DiOBo3txNd2
-# dPoEztT0Q1omRvDCRIOj7kFZRXSYpNDi50JEWEvFptMzSWh3TGlqn/NnskJSOUj9
-# AOKmF7zsMm5sa7pTbCT+SWKOpoHG2qzyQ3cVTZUDXcD7wcbVaxw3cPR0zzk7KkOU
-# /61AnLSlnxVP0qwOht73pmuv
+# DTI0MDQyMjAwMzAzNlowLwYJKoZIhvcNAQkEMSIEIN/eooPje7PABSfl32/eUpTr
+# +lRHiYxl15i5d1sKvI8TMA0GCSqGSIb3DQEBAQUABIICAJpgkkVqwMnQXjpMRMCW
+# n59IodKbLpyugJw0eE7hm5/abtCrETemIfZL9vhtm3Tcy76G7Fjy6xaFdqRiaqar
+# kxHlRYztEYhKYROCFFp30TjOruuA7PC7dXop2t6telDmbOP5/FP15nAR3MWZxeK7
+# dZ4Q6BfZl34NWKUqLhd/gnjF+ctmg/tXDiBKoviRC+LfzU/kyiGyDlGdFWahgQqd
+# Vit1rF7S1nOsEx1fxcFdeFgyE/CQb/ag8B8Knz+7npOSpB2oHZh1/p8xGf27iqpn
+# CTymGirMgeeBq1yoRFePvtTssm7GqACXb8ZjETzTAJcm67jnuy96XUoVTlG67OTg
+# F+eCSm4vt3k6FkvMte442CI+R2VUlEVinsnYJRF73tD6jCuoNjRk6d/QBRUPKS5a
+# +R5aGZ3jO2lElPpt74u6qMEd/FJcum4IpK9bgVaHk0f9+3oEHS5IGLsXg15s7DkP
+# ev8t/ysCt4QYf1pMzGJi2B49nKNBs+M80DDv31c1NXf9OsjaaKb0R6XJCWCgezgm
+# TJAQLdPtxwNAfkT51rfjMGecGDQGz9frpcyDZKXn1nFHwf8TMrVqtiNEfQiE+gqt
+# T9oUyKYWoMUlMzY37f4uR4xBFBXr09x/upTRQDRMFRka/L3Ia20Buw0m60Y2vRF6
+# wZGzOSo92gno5qfEE1WKjzl5
 # SIG # End signature block
